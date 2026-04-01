@@ -47,7 +47,7 @@ export const loginService = async (data ,req , res)=>{
     };
 
     const isValid = await comparePassword(password , user.password);
-    if(!isvalid){
+    if(!isValid){
         res.status(401).json({
             message : "invalid credentials"
         });
@@ -68,7 +68,7 @@ export const loginService = async (data ,req , res)=>{
 export const refreshService = async (refreshToken ,req,res)=>{
     const decoded = jwt.verify(
         refreshToken,
-        config.JWT_SECRETS
+        config.JWT_REFRESH_SECRET
     );
     const session = await findSession(refreshToken);
     if(!session){

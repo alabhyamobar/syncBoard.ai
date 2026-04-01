@@ -9,7 +9,6 @@ export const comparePassword = async (password ,hash)=>{
 };
 
 export const hashToken  = async (token)=>{
-    console.log(token)
     return bcrypt.hash(token,10);
 };
 

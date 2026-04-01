@@ -2,12 +2,6 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    // name: {
-    //   type: String,
-    //   required: true,
-    //   trim: true,
-    // },
-
     username: {
       type: String,
       unique: true,
@@ -45,6 +39,11 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    bio: {
+      type: String,
+      default: "",
+    },
+    
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -65,8 +64,8 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const userModel = mongoose.model("User", userSchema);
-export default userModel
+export default userModel;
