@@ -6,7 +6,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// ✅ attach access token
+
 api.interceptors.request.use((config) => {
   const token = getToken();
 

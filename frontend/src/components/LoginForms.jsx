@@ -41,7 +41,7 @@ const LoginForms = ({switchToSignup}) => {
   return (
     <div className="w-full flex items-center justify-center px-4 py-8">
       
-      {/* 🔥 FORM CARD */}
+
       <div className="
         w-full max-w-md 
         p-6 sm:p-8 
@@ -51,7 +51,7 @@ const LoginForms = ({switchToSignup}) => {
         shadow-[0_0_40px_rgba(139,92,246,0.15)]
       ">
         
-        {/* 🔥 HEADER */}
+
         <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-white mb-2">
           Welcome back
         </h1>
@@ -60,17 +60,17 @@ const LoginForms = ({switchToSignup}) => {
           Sign in to your account to continue.
         </p>
 
-        {/* 🔴 ERROR */}
+
         {serverError && (
           <div className="mb-4 p-3 text-sm bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">
             {serverError}
           </div>
         )}
 
-        {/* 🔥 FORM */}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           
-          {/* EMAIL */}
+
           <div>
             <label className="text-xs sm:text-sm text-gray-400">
               EMAIL
@@ -152,7 +152,7 @@ const LoginForms = ({switchToSignup}) => {
           </button>
         </form>
 
-        {/* 🔥 DIVIDER */}
+
         <div className="flex items-center my-6">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
           <span className="px-3 text-gray-500 text-xs">OR</span>
