@@ -39,6 +39,13 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(compression());
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "SyncBoard API is running 🚀",
+  });
+});
+
 app.use("/api/auth", AuthUserRouter);
 app.use("/api/user", userRouter);
 app.use("/api/workspace", workspaceRouter);
