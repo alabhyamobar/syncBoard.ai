@@ -20,6 +20,7 @@ export const requiredAuth = async(req,res,next) => {
     let decoded;
     try {
       decoded = jwt.verify(token, config.JWT_SECRETS);
+
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({
@@ -34,8 +35,9 @@ export const requiredAuth = async(req,res,next) => {
       });
     }
 
+
     const session = await sessionModel.findOne({
-      user:decoded.userId,
+      _id:decoded.sessionId,
       revoked:false,
     })
 
@@ -46,7 +48,7 @@ export const requiredAuth = async(req,res,next) => {
       });
     }
 
-    const user = await userModel.findById(decoded.userId).selsect("-password");
+    const user = await userModel.findById(decoded.id).select("-password");
 
     if (!user) {
       return res.status(401).json({
@@ -60,7 +62,7 @@ export const requiredAuth = async(req,res,next) => {
 
     next()
   }catch(err){
-    console.error("Auth Middleware Error:", error);
+    console.error("Auth Middleware Error:", err);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

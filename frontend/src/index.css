@@ -1,6 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap');
 @import "tailwindcss";
 
-/* main #0D0D0F */
-/* supporting #C8B8F0 */
-/* primary font #F0EFE8 */
+@custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --bg-color: #FAF8F5;
+  --text-color: #000000;
+  --pattern-dot: #000000;
+  --pattern-grid: #000000;
+}
+
+.dark {
+  --bg-color: #0f0a1c;
+  --text-color: #ffffff;
+  --pattern-dot: #8b5cf6;
+  --pattern-grid: #3b0764;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::selection {
+  background-color: #22d3ee;
+  color: #000000;
+}
+
+/* Custom Neo-Brutalist scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-left: 2px solid #000000;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  border-left: 2px solid #3b0764;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #22d3ee;
+  border: 2px solid #000000;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #8b5cf6;
+  border: 2px solid #3b0764;
+}
+
+/* Neobrutalist shaker hover effect */
+@keyframes neobrutalist-shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(0.8deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-0.8deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wobble-hover:hover {
+  animation: neobrutalist-shake 0.3s infinite linear;
+}

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 import workspaceModel from "./workspace.model.js";
-import workspaceMemberModel from "./worksopaceMember.model.js";
+import workspaceMemberModel from "./workspaceMember.model.js";
 
 export const createWorkspace = async ({ userId, name }) => {
   const session = await mongoose.startSession();
@@ -25,7 +26,7 @@ export const createWorkspace = async ({ userId, name }) => {
     await workspaceMemberModel.create(
       [
         {
-          workspaceId: workspace._id,
+          workspaceId: workspace[0]._id,
           userId,
           role: "OWNER",
           status: "ACTIVE",
@@ -41,34 +42,43 @@ export const createWorkspace = async ({ userId, name }) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    throw err;
+    throw error;
   }
 };
 
-export const inviteMember = async ({ workspaceId, emailUser, invitedBy }) => {
-  const existing = await workspaceMemberModel.findOne({
+export const inviteMember = async ({ workspaceId, email, userId = null, invitedBy, role = "VIEWER" }) => {
+  const query = {
     workspaceId,
-    userId: emailUser._id,
     status: { $in: ["PENDING", "ACTIVE"] },
-  });
+    $or: [],
+  };
+  if (userId) query.$or.push({ userId });
+  query.$or.push({ email: email.toLowerCase() });
+
+  const existing = await workspaceMemberModel.findOne(query);
 
   if (existing) {
     throw new Error("User already invited or member");
   }
 
-  return WorkspaceMember.create({
+  const inviteToken = crypto.randomBytes(32).toString("hex");
+  const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  return workspaceMemberModel.create({
     workspaceId,
-    userId: emailUser._id,
-    role: "VIEWER",
+    userId,
+    email: email.toLowerCase(),
+    role,
     status: "PENDING",
     invitedBy,
+    inviteToken,
+    inviteExpiresAt,
   });
 };
 
-export const acceptInvite = async ({ workspaceId, userId }) => {
-  const membership = await WorkspaceMember.findOne({
-    workspaceId,
-    userId,
+export const acceptInvite = async ({ inviteToken, userId }) => {
+  const membership = await workspaceMemberModel.findOne({
+    inviteToken,
     status: "PENDING",
   });
 
@@ -76,11 +86,15 @@ export const acceptInvite = async ({ workspaceId, userId }) => {
     throw new Error("Invite not found");
   }
 
-  return membership.acceptInvite();
+  if (membership.inviteExpiresAt && membership.inviteExpiresAt < new Date()) {
+    throw new Error("Invite expired");
+  }
+
+  return membership.acceptInvite(userId);
 };
 
 export const updateMemberRole = async ({ workspaceId, memberId, role }) => {
-  const member = await WorkspaceMember.findOne({
+  const member = await workspaceMemberModel.findOne({
     _id: memberId,
     workspaceId,
   });
@@ -108,7 +122,7 @@ export const transferOwnership = async ({
   session.startTransaction();
 
   try {
-    const currentOwner = await WorkspaceMember.findOne({
+    const currentOwner = await workspaceMemberModel.findOne({
       workspaceId,
       userId: currentOwnerId,
       role: "OWNER",
@@ -116,7 +130,7 @@ export const transferOwnership = async ({
 
     if (!currentOwner) throw new Error("Not owner");
 
-    const newOwner = await WorkspaceMember.findOne({
+    const newOwner = await workspaceMemberModel.findOne({
       workspaceId,
       userId: newOwnerId,
       status: "ACTIVE",
@@ -131,7 +145,7 @@ export const transferOwnership = async ({
     await currentOwner.save({ session });
     await newOwner.save({ session });
 
-    await Workspace.updateOne(
+    await workspaceModel.updateOne(
       { _id: workspaceId },
       { ownerId: newOwnerId },
       { session },
@@ -147,7 +161,7 @@ export const transferOwnership = async ({
 };
 
 export const removeMember = async ({ workspaceId, memberId }) => {
-  const member = await WorkspaceMember.findOne({
+  const member = await workspaceMemberModel.findOne({
     _id: memberId,
     workspaceId,
   });
@@ -158,11 +172,11 @@ export const removeMember = async ({ workspaceId, memberId }) => {
     throw new Error("Cannot remove owner");
   }
 
-  return member.removeMember();
+  return member.remove();
 };
 
 export const getUserWorkspaces = async (userId) => {
-  return WorkspaceMember.find({
+  return workspaceMemberModel.find({
     userId,
     status: "ACTIVE",
   })
@@ -175,7 +189,7 @@ export const checkWorkspaceAccess = async ({
   userId,
   roles = [],
 }) => {
-  const membership = await WorkspaceMember.findOne({
+  const membership = await workspaceMemberModel.findOne({
     workspaceId,
     userId,
     status: "ACTIVE",

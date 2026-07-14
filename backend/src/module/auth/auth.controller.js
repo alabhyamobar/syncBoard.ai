@@ -48,13 +48,21 @@ export const login = async (req, res) => {
 };
 
 export const refresh = async (req, res) => {
-  const { accessToken } = await refreshService(
-    req.cookies.refreshToken,
-    req,
-    res,
-  );
+  try {
+    if (!req.cookies || !req.cookies.refreshToken) {
+      return res.status(401).json({ message: "No refresh token" });
+    }
 
-  res.json({ accessToken });
+    const { accessToken } = await refreshService(
+      req.cookies.refreshToken,
+      req,
+      res,
+    );
+
+    res.json({ accessToken });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid session" });
+  }
 };
 
 export const logout = async (req, res) => {
@@ -110,16 +118,10 @@ export const googleCallback = async (req, res) => {
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production" ? true : false,
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.json({
-    user: {
-      username: user.username,
-      email: user.email,
-    },
-    accessToken,
-  });
+  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`);
 };

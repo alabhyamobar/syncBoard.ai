@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import api from "../api/axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/Authcontext";
+import { useAuth } from "../hooks";
 
-const LoginForms = ({switchToSignup}) => {
+const LoginForms = ({ switchToSignup }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -23,12 +23,15 @@ const LoginForms = ({switchToSignup}) => {
 
     try {
       const res = await api.post("/auth/login", data);
-
       const { accessToken, user } = res.data;
-
       login({ accessToken, user });
-      navigate("/dashboard");
-
+      const redirectPath = localStorage.getItem("redirect_after_login");
+      if (redirectPath) {
+        localStorage.removeItem("redirect_after_login");
+        navigate(redirectPath);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       setServerError(
         error.response?.data?.message || "Invalid email or password"
@@ -39,154 +42,103 @@ const LoginForms = ({switchToSignup}) => {
   };
 
   return (
-    <div className="w-full flex items-center justify-center px-4 py-8">
-      
+    <div className="w-full">
+      <h1 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white mb-1">
+        Welcome back
+      </h1>
 
-      <div className="
-        w-full max-w-md 
-        p-6 sm:p-8 
-        rounded-2xl 
-        bg-white/5 backdrop-blur-xl 
-        border border-white/10 
-        shadow-[0_0_40px_rgba(139,92,246,0.15)]
-      ">
-        
+      <p className="text-black/60 dark:text-zinc-400 font-bold text-xs uppercase mb-6 tracking-wide">
+        Sign in to your account to continue
+      </p>
 
-        <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-white mb-2">
-          Welcome back
-        </h1>
+      {serverError && (
+        <div className="mb-4 p-3.5 text-sm font-bold bg-red-100 border-[3px] border-red-500 text-red-700 shadow-[3px_3px_0px_0px_#ef4444]">
+          {serverError}
+        </div>
+      )}
 
-        <p className="text-gray-400 text-sm mb-6">
-          Sign in to your account to continue.
-        </p>
-
-
-        {serverError && (
-          <div className="mb-4 p-3 text-sm bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">
-            {serverError}
-          </div>
-        )}
-
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          
-
-          <div>
-            <label className="text-xs sm:text-sm text-gray-400">
-              EMAIL
-            </label>
-
-            <input
-              type="email"
-              placeholder="you@example.com"
-              {...register("email", { required: "Email is required" })}
-              className="
-                mt-2 w-full px-4 py-3 rounded-lg 
-                bg-white/5 border border-white/10 
-                text-white placeholder:text-gray-500 
-                outline-none 
-                focus:border-purple-400 
-                focus:ring-2 focus:ring-purple-500/20 
-                transition
-              "
-            />
-
-            {errors.email && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-
-          <div>
-            <label className="text-xs sm:text-sm text-gray-400">
-              PASSWORD
-            </label>
-
-            <input
-              type="password"
-              placeholder="••••••••"
-              {...register("password", { required: "Password is required" })}
-              className="
-                mt-2 w-full px-4 py-3 rounded-lg 
-                bg-white/5 border border-white/10 
-                text-white placeholder:text-gray-500 
-                outline-none 
-                focus:border-purple-400 
-                focus:ring-2 focus:ring-purple-500/20 
-                transition
-              "
-            />
-
-            {errors.password && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.password.message}
-              </p>
-            )}
-
-            <div className="text-right mt-2">
-              <button
-                type="button"
-                className="text-xs sm:text-sm text-purple-400 hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
-          </div>
-
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              w-full py-3 rounded-full 
-              bg-gradient-to-r from-purple-400 to-[#C8B8F0]
-              text-black font-medium 
-              hover:scale-[1.02] hover:shadow-lg 
-              transition-all duration-300 
-              disabled:opacity-50
-            "
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-
-        <div className="flex items-center my-6">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          <span className="px-3 text-gray-500 text-xs">OR</span>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div>
+          <label className="block text-xs font-black uppercase tracking-wider text-black dark:text-zinc-200 mb-2">
+            Email Address
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            {...register("email", { required: "Email is required" })}
+            className="w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#251d4a] text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
+          />
+          {errors.email && (
+            <p className="text-red-600 font-bold text-xs mt-2 uppercase tracking-wide">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
+        <div>
+          <label className="block text-xs font-black uppercase tracking-wider text-black dark:text-zinc-200 mb-2">
+            Password
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            {...register("password", { required: "Password is required" })}
+            className="w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#251d4a] text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
+          />
+          {errors.password && (
+            <p className="text-red-600 font-bold text-xs mt-2 uppercase tracking-wide">
+              {errors.password.message}
+            </p>
+          )}
+
+          <div className="text-right mt-2.5">
+            <button
+              type="button"
+              className="text-xs font-bold text-black dark:text-zinc-300 uppercase underline hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Forgot password?
+            </button>
+          </div>
+        </div>
 
         <button
-          className="
-            w-full flex items-center justify-center gap-3 py-3 rounded-full 
-            border border-white/10 text-white 
-            hover:bg-white/5 hover:scale-[1.02] 
-            transition-all duration-200
-          "
+          type="submit"
+          disabled={loading}
+          className="w-full py-3.5 bg-cyan-300 border-[3px] border-black dark:border-white font-black uppercase tracking-wider text-black dark:text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#8b5cf6] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#8b5cf6] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#8b5cf6] transition-all cursor-pointer disabled:opacity-50"
         >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="google"
-            className="w-5 h-5"
-          />
-          Continue with Google
+          {loading ? "Signing in..." : "Sign in"}
         </button>
+      </form>
 
-
-        <p className="text-center text-gray-400 text-xs sm:text-sm mt-6">
-          Don’t have an account?{" "}
-          <span
-            onClick={switchToSignup}
-            className="text-purple-400 cursor-pointer hover:underline"
-          >
-            Sign up
-          </span>
-        </p>
+      <div className="flex items-center my-6">
+        <div className="flex-1 h-[2px] bg-black dark:bg-zinc-700"></div>
+        <span className="px-3 text-black dark:text-zinc-400 font-black text-xs uppercase tracking-wider">OR</span>
+        <div className="flex-1 h-[2px] bg-black dark:bg-zinc-700"></div>
       </div>
+
+      <button
+        onClick={() => {
+          window.location.href = "http://localhost:5000/api/auth/google";
+        }}
+        className="w-full flex items-center justify-center gap-3 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#1a1435] text-black dark:text-white font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#22d3ee] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#22d3ee] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#22d3ee] transition-all cursor-pointer"
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="google"
+          className="w-5 h-5"
+        />
+        Continue with Google
+      </button>
+
+      <p className="text-center text-black/80 dark:text-zinc-300 font-bold text-xs sm:text-sm mt-6 uppercase tracking-wide">
+        Don’t have an account?{" "}
+        <span
+          onClick={switchToSignup}
+          className="text-purple-600 dark:text-purple-400 underline cursor-pointer hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+        >
+          Sign up
+        </span>
+      </p>
     </div>
   );
 };

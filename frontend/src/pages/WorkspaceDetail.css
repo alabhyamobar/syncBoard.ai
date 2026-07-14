@@ -1,0 +1,14 @@
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000;
+  border: 2px solid #FAF8F5;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ec4899;
+  border: 2px solid #150e2a;
+}

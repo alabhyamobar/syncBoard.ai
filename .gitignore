@@ -1,2 +1,12 @@
 .env
 backend/.env
+
+axios_explanation.md
+redis_explanation.md
+invitation.md
+collaboration.md
+document.md
+fixed_bugs.md
+frontendstructure.md
+redis.md
+workspace.md

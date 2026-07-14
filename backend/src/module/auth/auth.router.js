@@ -21,6 +21,7 @@ AuthUserRouter.get(
   "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
+    prompt: "select_account",
   }),
 );
 

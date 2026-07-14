@@ -10,6 +10,9 @@ import cookieParser from "cookie-parser";
 import AuthUserRouter from "./module/auth/auth.router.js";
 import passport from "passport";
 import "./config/passport.js";
+import userRouter from "../src/module/user/user.router.js";
+import workspaceRouter from "./module/workspace/workspace.router.js";
+import documentRouter from "./module/document/document.router.js";
 
 const app = express();
 
@@ -37,5 +40,8 @@ app.use(morgan("dev"));
 app.use(compression());
 
 app.use("/api/auth", AuthUserRouter);
+app.use("/api/user", userRouter);
+app.use("/api/workspace", workspaceRouter);
+app.use("/api/document", documentRouter);
 
 export default app;

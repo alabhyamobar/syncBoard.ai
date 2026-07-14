@@ -40,13 +40,13 @@ const workspaceSchema = new mongoose.Schema(
 workspaceSchema.index({ ownerId: 1, createdAt: -1 });
 
 workspaceSchema.pre("validate", function (next) {
-  if (this.isModified("name") || !this.slug) {
+  if (!this.slug) {
     this.slug = slugify(this.name, {
       lower: true,
       strict: true,
     });
   }
-  next();
+  if (typeof next === "function") next();
 });
 
 workspaceSchema.statics.generateUniqueSlug = async function (name) {
@@ -64,7 +64,7 @@ workspaceSchema.statics.generateUniqueSlug = async function (name) {
 
 workspaceSchema.pre(/^find/, function (next) {
   this.where({ isDeleted: false });
-  next();
+  if (typeof next === "function") next();
 });
 
 workspaceSchema.methods.softDelete = function () {

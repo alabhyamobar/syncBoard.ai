@@ -1,7 +1,7 @@
 import userModel from "./user.model.js";
 
 
-export const getCurrentUSer = async(userId) =>{
+export const getCurrentUser = async(userId) =>{
     const user = await userModel.findById(userId).select("-password");
 
     if(!user){
@@ -13,8 +13,8 @@ export const getCurrentUSer = async(userId) =>{
 
 
 export const getUserByIdService = async (userId) => {
-    const user = await User.findById(userId).select(
-      "name email avatar bio"
+    const user = await userModel.findById(userId).select(
+      "username email avatar bio"
     );
   
     if (!user) {
@@ -26,15 +26,15 @@ export const getUserByIdService = async (userId) => {
 
 
   export const updateUserService = async (userId, updateData) => {
-    const { name, bio, avatar } = updateData;
+    const { username, bio, avatar } = updateData;
   
-    if (!name && !bio && !avatar) {
+    if (!username && !bio && !avatar) {
       throw new Error("Nothing to update");
     }
   
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser = await userModel.findByIdAndUpdate(
       userId,
-      { name, bio, avatar },
+      { username, bio, avatar },
       { new: true }
     ).select("-password");
   
@@ -45,13 +45,13 @@ export const getUserByIdService = async (userId) => {
   export const searchUsersService = async (query) => {
     if (!query) return [];
   
-    const users = await User.find({
+    const users = await userModel.find({
       $or: [
-        { name: { $regex: query, $options: "i" } },
+        { username: { $regex: query, $options: "i" } },
         { email: { $regex: query, $options: "i" } },
       ],
     })
-      .select("name email avatar")
+      .select("username email avatar")
       .limit(10);
   
     return users;

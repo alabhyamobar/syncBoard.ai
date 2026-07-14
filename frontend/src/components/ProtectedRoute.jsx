@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/Authcontext";
+import { useAuth } from "../hooks";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -9,6 +9,9 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
+    if (window.location.pathname.startsWith("/accept-invite/")) {
+      localStorage.setItem("redirect_after_login", window.location.pathname);
+    }
     return <Navigate to="/" replace />;
   }
 

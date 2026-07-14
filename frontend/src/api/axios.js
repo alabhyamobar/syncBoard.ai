@@ -1,5 +1,5 @@
 import axios from "axios";
-import { setToken , getToken } from "../util/tokenManager.js";
+import { setToken, getToken } from "../util";
 
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
@@ -9,7 +9,6 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = getToken();
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,9 +22,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    const isAuthRequest = originalRequest.url && originalRequest.url.includes("auth/");
+
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isAuthRequest
     ) {
       originalRequest._retry = true;
 
@@ -45,8 +47,10 @@ api.interceptors.response.use(
         return api(originalRequest);
 
       } catch (err) {
-        setToken(null);
-        window.location.href = "/";
+        setToken(null); 
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
+        }
       }
     }
 

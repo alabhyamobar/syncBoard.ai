@@ -6,7 +6,7 @@ import {
   searchUsers,
 } from "./user.controller.js";
 
-import { requiredAuth } from "../../middleware/auth.js";
+import { requiredAuth } from "../../middleware/auth.middleware.js";
 
 const userRouter = express.Router();
 

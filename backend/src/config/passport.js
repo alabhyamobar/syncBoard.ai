@@ -2,6 +2,7 @@ import passport from "passport";
 import {Strategy as GoogleStrategy} from "passport-google-oauth20"
 import userModel from "../module/user/user.model.js";
 import config from "./config.js";
+import mongoose from "mongoose";
 
 passport.use(
     new GoogleStrategy(
@@ -24,6 +25,12 @@ passport.use(
                         avatar:profile.photos?.[0]?.value,
                         isEmailVerified:true,
                     });
+
+                    // Link any pending email-only invites to this new user account
+                    await mongoose.models.WorkspaceMember.updateMany(
+                        { email: email.toLowerCase(), userId: null },
+                        { userId: user._id }
+                    );
                 }
                 else if(!user.googleId){
                     user.googleId = profile.id

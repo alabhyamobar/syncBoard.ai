@@ -1,7 +1,7 @@
+import mongoose from "mongoose";
 import userModel from "../user/user.model.js";
 import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { generateAccessToken, generateRefreshToken } from "../../utils/auth.js";
-
 import { createSession, findSession } from "../session/session.service.js";
 import jwt from "jsonwebtoken";
 import config from "../../config/config.js";
@@ -22,6 +22,12 @@ export const registerService = async (data, req, res) => {
     email,
     password:await hashPassword(password),
   });
+
+  // Link any pending email-only invites to this new user account
+  await mongoose.models.WorkspaceMember.updateMany(
+    { email: email.toLowerCase(), userId: null },
+    { userId: user._id }
+  );
 
   const refreshToken = generateRefreshToken(user);
   const session = await createSession({
