@@ -19,7 +19,10 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: ["http://localhost:5173" , "https://sync-board-ai.vercel.app"],
+    origin: [
+      process.env.FRONTEND_DEV_URL ,
+      process.env.FRONTEND_PROD_URL
+    ],
     credentials: true, 
   }),
 );

@@ -9,7 +9,10 @@ const activeRoomsFallback = {}; // Format: { [roomId]: { [socketId]: { userId, u
 export const initSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: [
+        process.env.FRONTEND_DEV_URL, 
+        process.env.FRONTEND_PROD_URL 
+      ],
       credentials: true,
     },
   });
