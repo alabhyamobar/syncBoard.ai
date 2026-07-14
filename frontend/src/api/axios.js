@@ -1,8 +1,14 @@
 import axios from "axios";
 import { setToken, getToken } from "../util";
 
+const DEV_URL = import.meta.env.VITE_DEV_BACKEND_URL 
+const PROD_URL = import.meta.env.VITE_PROD_BACKEND_URL 
+
+const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+export const BACKEND_URL = isDev ? DEV_URL : PROD_URL;
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${BACKEND_URL}/api`,
   withCredentials: true,
 });
 
@@ -33,7 +39,7 @@ api.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:5000/api/auth/refresh",
+          `${BACKEND_URL}/api/auth/refresh`,
           {},
           { withCredentials: true }
         );

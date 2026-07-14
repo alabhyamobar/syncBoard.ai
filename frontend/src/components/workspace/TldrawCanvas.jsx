@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useMemo, useState, useEffect } from "react"
 import { Tldraw } from "tldraw";
 import { io } from "socket.io-client";
 import { useAuth } from "../../hooks";
+import { BACKEND_URL } from "../../api/axios";
 import "tldraw/tldraw.css";
 
 const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) => {
@@ -75,7 +76,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
     if (readOnly) return;
 
     // Connect to WebSocket server
-    const socket = io("http://localhost:3000", {
+    const socket = io(BACKEND_URL, {
       withCredentials: true,
       transports: ["websocket", "polling"]
     });

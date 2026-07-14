@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import api from "../api";
 import { useAuth } from "../hooks";
 import { useNavigate } from "react-router-dom";
+import { BACKEND_URL } from "../api/axios";
 
 const SignInForms = ({ switchToLogin }) => {
   const { login } = useAuth();
@@ -154,7 +155,7 @@ const SignInForms = ({ switchToLogin }) => {
 
       <button
         onClick={() => {
-          window.location.href = "http://localhost:5000/api/auth/google";
+          window.location.href = `${BACKEND_URL}/api/auth/google`;
         }}
         className="w-full flex items-center justify-center gap-3 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#1a1435] text-black dark:text-white font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#22d3ee] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#22d3ee] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#22d3ee] transition-all cursor-pointer"
       >
