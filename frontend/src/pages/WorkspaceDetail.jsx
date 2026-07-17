@@ -3,12 +3,12 @@ import { useParams } from "react-router-dom";
 
 import { useWorkspaceDocument } from "../hooks";
 
-import WorkspaceSidebar    from "../components/workspace/WorkspaceSidebar";
-import WorkspaceHeader     from "../components/workspace/WorkspaceHeader";
-import WorkspaceWelcome    from "../components/workspace/WorkspaceWelcome";
-import NotesEditor         from "../components/workspace/NotesEditor";
-import TldrawCanvas        from "../components/workspace/TldrawCanvas";
-import CreateCanvasModal   from "../components/workspace/CreateCanvasModal";
+import WorkspaceSidebar from "../components/workspace/WorkspaceSidebar";
+import WorkspaceHeader from "../components/workspace/WorkspaceHeader";
+import WorkspaceWelcome from "../components/workspace/WorkspaceWelcome";
+import NotesEditor from "../components/workspace/NotesEditor";
+import TldrawCanvas from "../components/workspace/TldrawCanvas";
+import CreateCanvasModal from "../components/workspace/CreateCanvasModal";
 import "./WorkspaceDetail.css";
 
 /**
@@ -106,7 +106,7 @@ const WorkspaceDetail = () => {
   );
 
   return (
-    <div className="flex h-screen bg-[#FAF8F5] dark:bg-[#121214] text-black dark:text-white overflow-hidden selection:bg-yellow-300 font-sans relative transition-colors duration-200">
+    <div className="flex h-screen bg-main-bg text-black dark:text-white overflow-hidden selection:bg-yellow-300 font-sans relative transition-colors duration-200">
 
       {/* Mobile overlay backdrop */}
       {isSidebarOpen && (
@@ -156,18 +156,17 @@ const WorkspaceDetail = () => {
         />
 
         {/* Dynamic Body */}
-        <div className="flex-1 relative overflow-hidden bg-[#FAF8F5] dark:bg-[#0f0a1c]">
+        <div className="flex-1 relative overflow-hidden bg-main-bg">
           {activeDoc ? (
             <div className="w-full h-full flex flex-col md:flex-row">
 
               {/* Notes Pane */}
               {(viewMode === "notes" || viewMode === "split") && (
                 <div
-                  className={`border-black dark:border-[#8b5cf6] transition-all duration-200 overflow-hidden ${
-                    viewMode === "split"
+                  className={`border-neon-border transition-all duration-200 overflow-hidden ${viewMode === "split"
                       ? "w-full h-1/2 md:w-[40%] md:h-full border-b-[4px] md:border-b-0 md:border-r-[4px]"
                       : "w-full h-full"
-                  }`}
+                    }`}
                 >
                   <NotesEditor
                     value={notesContent}
@@ -180,11 +179,10 @@ const WorkspaceDetail = () => {
               {/* tldraw Canvas Pane */}
               {(viewMode === "canvas" || viewMode === "split") && (
                 <div
-                  className={`relative ${
-                    viewMode === "split"
+                  className={`relative ${viewMode === "split"
                       ? "w-full h-1/2 md:w-[60%] md:h-full"
                       : "w-full h-full"
-                  }`}
+                    }`}
                 >
                   {canvasSnapshot !== undefined ? (
                     <TldrawCanvas
@@ -196,7 +194,7 @@ const WorkspaceDetail = () => {
                       readOnly={isViewer}
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-[#FAF8F5] dark:bg-[#0f0a1c] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-main-bg flex items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-4 border-t-purple-600 border-black rounded-full animate-spin"></div>
                         <span className="text-xs font-black uppercase tracking-wider text-black/50 dark:text-zinc-500 animate-pulse">

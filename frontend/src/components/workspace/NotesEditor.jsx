@@ -30,21 +30,21 @@ const NotesEditor = ({ value, onChange, readOnly = false }) => {
   const helpers = [
     { label: "H1", syntax: "# " },
     { label: "H2", syntax: "## " },
-    { label: "B",  syntax: "**Text**" },
+    { label: "B", syntax: "**Text**" },
     { label: "Code", syntax: "```javascript\n\n```" },
     { label: "List", syntax: "- " },
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-[#110e23] border-r-[3px] border-black dark:border-[#8b5cf6]">
+    <div className="h-full flex flex-col bg-card-bg border-r-[3px] border-neon-border">
       {/* Toolbar */}
-      <div className="p-3 border-b-[3px] border-black dark:border-[#8b5cf6] flex flex-wrap justify-between items-center bg-zinc-50 dark:bg-[#1a1435] gap-2 shrink-0">
-        <span className="text-[10px] font-black uppercase text-black dark:text-zinc-300 bg-white dark:bg-zinc-800 px-2 py-0.5 border-2 border-black dark:border-white/20 shadow-[1px_1px_0px_0px_#000] dark:shadow-[1px_1px_0px_0px_#fff]">
+      <div className="p-3 border-b-[3px] border-neon-border flex flex-wrap justify-between items-center bg-zinc-50 dark:bg-hover-bg gap-2 shrink-0">
+        <span className="text-[10px] font-black uppercase text-black dark:text-zinc-300 bg-white dark:bg-zinc-800 px-2 py-0.5 border-2 border-neon-border border-opacity-20 shadow-[1px_1px_0px_0px_var(--shadow-white)]">
           Notes Spec
         </span>
         <div className="flex gap-1.5 items-center">
           {readOnly ? (
-            <span className="text-[9px] font-black bg-red-300 border-[2px] border-black text-black px-2.5 py-1 shadow-[1.5px_1.5px_0px_0px_#000] uppercase select-none rotate-[-2deg]">
+            <span className="text-[9px] font-black bg-red-300 border-[2px] border-neon-border text-black px-2.5 py-1 shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] uppercase select-none rotate-[-2deg]">
               Read Only
             </span>
           ) : (
@@ -62,7 +62,7 @@ const NotesEditor = ({ value, onChange, readOnly = false }) => {
                   key={h.label}
                   type="button"
                   onClick={() => insertSyntax(h.syntax)}
-                  className={`px-2.5 py-1 border-[2px] border-black text-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer ${colorClass}`}
+                  className={`px-2.5 py-1 border-[2px] border-neon-border text-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer ${colorClass}`}
                 >
                   {h.label}
                 </button>

@@ -74,10 +74,10 @@ const SignInForms = ({ switchToLogin }) => {
                 message: "Minimum 3 characters",
               },
             })}
-            className="w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#251d4a] text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
+            className="w-full px-4 py-3 border-[3px] border-neon-border bg-card-bg text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_var(--shadow-pink)] focus:shadow-[5px_5px_0px_0px_var(--shadow-pink)] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
           />
           {errors.username && (
-            <p className="text-red-600 font-bold text-xs mt-2 uppercase tracking-wide">
+            <p className="text-red-650 font-bold text-xs mt-2 uppercase tracking-wide">
               {errors.username.message}
             </p>
           )}
@@ -97,10 +97,10 @@ const SignInForms = ({ switchToLogin }) => {
                 message: "Invalid email format",
               },
             })}
-            className="w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#251d4a] text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
+            className="w-full px-4 py-3 border-[3px] border-neon-border bg-card-bg text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_var(--shadow-pink)] focus:shadow-[5px_5px_0px_0px_var(--shadow-pink)] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all"
           />
           {errors.email && (
-            <p className="text-red-600 font-bold text-xs mt-2 uppercase tracking-wide">
+            <p className="text-red-650 font-bold text-xs mt-2 uppercase tracking-wide">
               {errors.email.message}
             </p>
           )}
@@ -121,7 +121,7 @@ const SignInForms = ({ switchToLogin }) => {
                   message: "Minimum 6 characters",
                 },
               })}
-              className="w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#251d4a] text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all pr-16"
+              className="w-full px-4 py-3 border-[3px] border-neon-border bg-card-bg text-black dark:text-white font-semibold placeholder:text-black/30 dark:placeholder:text-zinc-400 outline-none shadow-[3px_3px_0px_0px_var(--shadow-pink)] focus:shadow-[5px_5px_0px_0px_var(--shadow-pink)] focus:-translate-x-0.5 focus:-translate-y-0.5 transition-all pr-16"
             />
             <button
               type="button"
@@ -132,7 +132,7 @@ const SignInForms = ({ switchToLogin }) => {
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-600 font-bold text-xs mt-2 uppercase tracking-wide">
+            <p className="text-red-650 font-bold text-xs mt-2 uppercase tracking-wide">
               {errors.password.message}
             </p>
           )}
@@ -141,7 +141,7 @@ const SignInForms = ({ switchToLogin }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 bg-purple-300 dark:bg-purple-500 border-[3px] border-black dark:border-white font-black uppercase tracking-wider text-black dark:text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#22d3ee] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#22d3ee] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#22d3ee] transition-all cursor-pointer disabled:opacity-50"
+          className="w-full py-3.5 bg-purple-300 dark:bg-purple-500 border-[3px] border-neon-border font-black uppercase tracking-wider text-black dark:text-black shadow-[4px_4px_0px_0px_var(--shadow-cyan)] hover:shadow-[6px_6px_0px_0px_var(--shadow-cyan)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-cyan)] transition-all cursor-pointer disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Sign up"}
         </button>
@@ -157,7 +157,7 @@ const SignInForms = ({ switchToLogin }) => {
         onClick={() => {
           window.location.href = `${BACKEND_URL}/api/auth/google`;
         }}
-        className="w-full flex items-center justify-center gap-3 py-3 border-[3px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#1a1435] text-black dark:text-white font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#22d3ee] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#22d3ee] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#22d3ee] transition-all cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 py-3 border-[3px] border-neon-border bg-card-bg text-black dark:text-white font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_var(--shadow-cyan)] hover:shadow-[6px_6px_0px_0px_var(--shadow-cyan)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-cyan)] transition-all cursor-pointer"
       >
         <img
           src="https://www.svgrepo.com/show/475656/google-color.svg"

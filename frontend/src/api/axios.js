@@ -1,8 +1,8 @@
 import axios from "axios";
 import { setToken, getToken } from "../util";
 
-const DEV_URL = import.meta.env.VITE_DEV_BACKEND_URL 
-const PROD_URL = import.meta.env.VITE_PROD_BACKEND_URL 
+const DEV_URL = import.meta.env.VITE_DEV_BACKEND_URL || "http://localhost:5000";
+const PROD_URL = import.meta.env.VITE_PROD_BACKEND_URL || "https://syncboard-ai.onrender.com";
 
 const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 export const BACKEND_URL = isDev ? DEV_URL : PROD_URL;

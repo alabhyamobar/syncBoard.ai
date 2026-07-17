@@ -5,10 +5,6 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #000;
-  border: 2px solid #FAF8F5;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #ec4899;
-  border: 2px solid #150e2a;
+  background: var(--neon-border);
+  border: 2px solid var(--main-bg);
 }

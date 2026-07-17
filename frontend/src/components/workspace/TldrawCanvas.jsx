@@ -1,12 +1,13 @@
 import React, { useRef, useCallback, useMemo, useState, useEffect } from "react";
 import { Tldraw } from "tldraw";
 import { io } from "socket.io-client";
-import { useAuth } from "../../hooks";
+import { useAuth, useTheme } from "../../hooks";
 import { BACKEND_URL } from "../../api/axios";
 import "tldraw/tldraw.css";
 
 const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const editorRef = useRef(null);
   const saveTimerRef = useRef(null);
   const socketRef = useRef(null);
@@ -275,7 +276,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
 
       {/* active room collaborators list bubble */}
       {presenceList.length > 1 && (
-        <div className="absolute top-4 right-4 z-50 flex items-center gap-1 bg-white/95 dark:bg-[#150e2a]/95 border-[3px] border-black dark:border-[#8b5cf6] p-2.5 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#8b5cf6]">
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-1 bg-panel-bg/95 border-[3px] border-neon-border p-2.5 shadow-[4px_4px_0px_0px_var(--shadow-purple)]">
           <span className="w-2.5 h-2.5 bg-emerald-400 border-2 border-black rounded-full animate-pulse mr-1"></span>
           <span className="text-[10px] font-black uppercase text-black dark:text-white tracking-wider mr-2">Online:</span>
           <div className="flex -space-x-2.5">
@@ -301,7 +302,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
         snapshot={resolvedSnapshot}
         onMount={handleMount}
         isReadOnly={readOnly}
-        inferDarkMode
+        colorScheme={theme}
       />
     </div>
   );

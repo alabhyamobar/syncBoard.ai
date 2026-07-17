@@ -3,18 +3,50 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-main-bg: var(--main-bg);
+  --color-panel-bg: var(--panel-bg);
+  --color-card-bg: var(--card-bg);
+  --color-hover-bg: var(--hover-bg);
+  --color-neon-border: var(--neon-border);
+}
+
 :root {
-  --bg-color: #FAF8F5;
+  --main-bg: #FAF8F5;
+  --panel-bg: #ffffff;
+  --card-bg: #ffffff;
+  --hover-bg: #f4f4f5;
+  --neon-border: #000000;
+  
+  --shadow-pink: #000000;
+  --shadow-cyan: #000000;
+  --shadow-purple: #000000;
+  --shadow-yellow: #000000;
+  --shadow-white: #000000;
+
+  --bg-color: var(--main-bg);
   --text-color: #000000;
   --pattern-dot: #000000;
   --pattern-grid: #000000;
 }
 
 .dark {
-  --bg-color: #0f0a1c;
-  --text-color: #ffffff;
-  --pattern-dot: #8b5cf6;
-  --pattern-grid: #3b0764;
+  --main-bg: #0d0d10;          /* Midnight Onyx */
+  --panel-bg: #151519;         /* Deep Slate Panel */
+  --card-bg: #1e1e24;          /* Sleek Slate-Zinc Card */
+  --hover-bg: #2a2a32;         /* Interactive highlights */
+  --neon-border: #e2e8f0;      /* Crisp off-white border */
+  
+  --shadow-pink: #000000;      /* Pure solid black shadow */
+  --shadow-cyan: #000000;      /* Pure solid black shadow */
+  --shadow-purple: #000000;    /* Pure solid black shadow */
+  --shadow-yellow: #000000;    /* Pure solid black shadow */
+  --shadow-white: #000000;     /* Pure solid black shadow */
+  
+  --bg-color: var(--main-bg);
+  --text-color: #f8fafc;       /* Clean bright text */
+  --pattern-dot: #222228;
+  --pattern-grid: #222228;
 }
 
 body {
@@ -36,22 +68,17 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--bg-color);
-  border-left: 2px solid #000000;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  border-left: 2px solid #3b0764;
+  background: var(--main-bg);
+  border-left: 2px solid var(--neon-border);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #22d3ee;
-  border: 2px solid #000000;
+  background-color: var(--shadow-cyan);
+  border: 2px solid var(--neon-border);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #8b5cf6;
-  border: 2px solid #3b0764;
+  background-color: var(--shadow-purple);
 }
 
 /* Neobrutalist shaker hover effect */

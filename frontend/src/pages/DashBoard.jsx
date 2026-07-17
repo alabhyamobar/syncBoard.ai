@@ -138,6 +138,8 @@ const DashBoard = () => {
         }
         uniqueUsersMap[key].workspaces.push({
           workspaceName: m.workspaceName,
+          workspaceId: m.workspaceId,
+          memberId: m._id,
           role: m.role,
           status: m.status
         });
@@ -147,6 +149,24 @@ const DashBoard = () => {
       console.error("Error aggregating members:", error);
     } finally {
       setLoadingMembers(false);
+    }
+  };
+
+  const handleRemoveMemberFromDashboard = async (workspaceId, memberId, username) => {
+    if (!window.confirm(`Are you sure you want to remove ${username} from this workspace?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/workspace/${workspaceId}/members/${memberId}`);
+      // Refresh local workspaces & teammate lists
+      await fetchWorkspaces();
+      const res = await api.get("/workspace");
+      if (res.data && res.data.workspaces) {
+        await fetchAllMembers(res.data.workspaces);
+      }
+    } catch (err) {
+      console.error("Failed to remove member:", err);
+      alert(err.response?.data?.message || "Failed to remove member");
     }
   };
 
@@ -272,12 +292,12 @@ const DashBoard = () => {
       <nav className={`
         fixed md:relative z-50 flex flex-col 
         w-[280px] h-full 
-        bg-white dark:bg-[#150e2a] border-r-[4px] border-black dark:border-[#8b5cf6]
+        bg-panel-bg border-r-[4px] border-neon-border
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Sidebar Logo */}
-        <div className="p-6 border-b-[4px] border-black dark:border-[#8b5cf6] flex items-center justify-between bg-cyan-300">
+        <div className="p-6 border-b-[4px] border-neon-border flex items-center justify-between bg-cyan-300">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-black dark:bg-[#ec4899] flex items-center justify-center border-2 border-white dark:border-[#8b5cf6] shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]">
               <span className="font-extrabold text-white dark:text-white text-xs tracking-tighter uppercase">SB</span>
@@ -298,7 +318,7 @@ const DashBoard = () => {
 
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8">
           <div>
-            <div className="px-4 text-xs font-black tracking-wider text-black/40 dark:text-zinc-500 uppercase mb-4">
+            <div className="px-4 text-xs font-black tracking-wider text-black/40 dark:text-zinc-400 uppercase mb-4">
               Overview
             </div>
             <div className="space-y-3">
@@ -316,14 +336,14 @@ const DashBoard = () => {
                       setActiveTab(tab.id);
                       setIsSidebarOpen(false);
                     }}
-                    className={`w-full px-4 py-3 border-[3px] border-black dark:border-[#8b5cf6] flex justify-between items-center font-black uppercase transition-all cursor-pointer ${
+                    className={`w-full px-4 py-3 border-[3px] border-neon-border flex justify-between items-center font-black uppercase transition-all cursor-pointer ${
                       isActive
-                        ? "bg-purple-300 dark:bg-purple-600 text-black dark:text-white shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#06b6d4] translate-x-[-2px] translate-y-[-2px]"
-                        : "bg-white dark:bg-[#1a1435] text-black dark:text-white hover:bg-cyan-50 dark:hover:bg-[#251d4a] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#ec4899] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                        ? "bg-purple-300 dark:bg-purple-600 text-black dark:text-white shadow-[3px_3px_0px_0px_var(--shadow-cyan)] translate-x-[-2px] translate-y-[-2px]"
+                        : "bg-card-bg text-black dark:text-white hover:bg-cyan-50 dark:hover:bg-hover-bg hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-pink)] active:translate-x-0 active:translate-y-0 active:shadow-none"
                     }`}
                   >
                     <span>{tab.label}</span>
-                    <span className="text-xs bg-white dark:bg-zinc-800 border-2 border-black dark:border-[#8b5cf6] text-black dark:text-white px-2.5 py-0.5 font-bold shadow-[1px_1px_0px_0px_#000] dark:shadow-[1px_1px_0px_0px_#06b6d4]">
+                    <span className="text-xs bg-white dark:bg-zinc-800 border-2 border-neon-border text-black dark:text-white px-2.5 py-0.5 font-bold shadow-[1px_1px_0px_0px_var(--shadow-cyan)]">
                       {tab.count}
                     </span>
                   </button>
@@ -336,16 +356,16 @@ const DashBoard = () => {
         {/* User Card */}
         <div ref={profileMenuRef} className="relative mx-4 mb-4">
           {showProfileMenu && (
-            <div className="absolute bottom-[calc(100%+10px)] left-0 right-0 bg-white dark:bg-[#1a1435] border-[3px] border-black dark:border-[#8b5cf6] shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#ec4899] z-50 p-2.5 space-y-2 select-none">
+            <div className="absolute bottom-[calc(100%+10px)] left-0 right-0 bg-card-bg border-[3px] border-neon-border shadow-[4px_4px_0px_0px_var(--shadow-pink)] z-50 p-2.5 space-y-2 select-none">
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-3.5 py-2.5 border-[2px] border-black dark:border-[#8b5cf6] bg-yellow-100 hover:bg-yellow-200 dark:bg-[#251d4a] dark:hover:bg-[#322765] font-black uppercase text-xs tracking-wider transition-all cursor-pointer text-black dark:text-white hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#8b5cf6] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                className="w-full text-left px-3.5 py-2.5 border-[2px] border-neon-border bg-yellow-100 hover:bg-yellow-200 dark:bg-hover-bg dark:hover:bg-opacity-80 font-black uppercase text-xs tracking-wider transition-all cursor-pointer text-black dark:text-white hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-purple)] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Log Out
               </button>
               <button
                 onClick={handleLogoutAll}
-                className="w-full text-left px-3.5 py-2.5 border-[2px] border-black dark:border-red-500 bg-red-100 hover:bg-red-200 dark:bg-red-950/45 dark:hover:bg-red-950/70 font-black uppercase text-xs tracking-wider transition-all cursor-pointer text-red-600 dark:text-red-400 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#ef4444] dark:hover:shadow-[3px_3px_0px_0px_#ef4444] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                className="w-full text-left px-3.5 py-2.5 border-[2px] border-neon-border bg-red-100 hover:bg-red-200 dark:bg-red-950/45 dark:hover:bg-red-950/70 font-black uppercase text-xs tracking-wider transition-all cursor-pointer text-red-600 dark:text-red-400 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#ef4444] dark:hover:shadow-[3px_3px_0px_0px_#ef4444] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Log Out All Devices
               </button>
@@ -354,9 +374,9 @@ const DashBoard = () => {
 
           <div 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="p-4 border-[3px] border-black dark:border-[#8b5cf6] bg-emerald-300 dark:bg-emerald-500 text-black dark:text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fde047] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fde047] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#fde047] transition-all cursor-pointer flex items-center gap-3 select-none"
+            className="p-4 border-[3px] border-neon-border bg-emerald-300 dark:bg-emerald-500 text-black dark:text-black shadow-[4px_4px_0px_0px_var(--shadow-yellow)] hover:shadow-[6px_6px_0px_0px_var(--shadow-yellow)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-yellow)] transition-all cursor-pointer flex items-center gap-3 select-none"
           >
-            <div className="w-10 h-10 border-[2px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#1a1435] flex items-center justify-center shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fde047] overflow-hidden">
+            <div className="w-10 h-10 border-[2px] border-neon-border bg-white dark:bg-zinc-800 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--shadow-yellow)] overflow-hidden">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
               ) : (
@@ -382,7 +402,7 @@ const DashBoard = () => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* Topbar */}
-        <header className="flex justify-between items-center px-6 lg:px-10 py-5 border-b-[4px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#150e2a] sticky top-0 z-20 transition-colors duration-200">
+        <header className="flex justify-between items-center px-6 lg:px-10 py-5 border-b-[4px] border-neon-border bg-panel-bg sticky top-0 z-20 transition-colors duration-200">
           <div className="flex items-center gap-4">
             <button 
               className="md:hidden p-2 -ml-2 text-black dark:text-white hover:text-purple-600 rounded-lg transition-colors border-2 border-transparent active:border-black"
@@ -404,7 +424,7 @@ const DashBoard = () => {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2.5 bg-white dark:bg-zinc-800 border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#22d3ee] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#22d3ee] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
+              className="p-2.5 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? (
@@ -425,14 +445,14 @@ const DashBoard = () => {
               <input
                 value={searchQueries[activeTab] || ""}
                 onChange={(e) => setSearchQueries(prev => ({ ...prev, [activeTab]: e.target.value }))}
-                className="w-[200px] lg:w-[280px] bg-white dark:bg-[#221a48] border-[3px] border-black dark:border-[#8b5cf6] pl-10 pr-4 py-2.5 text-sm text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-zinc-400 font-bold shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#ec4899] focus:shadow-[4px_4px_0px_0px_#000] dark:focus:shadow-[4px_4px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
+                className="w-[200px] lg:w-[280px] bg-card-bg border-[3px] border-neon-border pl-10 pr-4 py-2.5 text-sm text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-zinc-400 font-bold shadow-[2px_2px_0px_0px_var(--shadow-white)] focus:shadow-[4px_4px_0px_0px_var(--shadow-white)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
                 placeholder={`Search ${activeTab}...`}
               />
             </div>
 
             <button
               onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-cyan-300 border-[3px] border-black dark:border-white font-black uppercase text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#fff] transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 bg-cyan-300 border-[3px] border-neon-border font-black uppercase text-black shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:shadow-[6px_6px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-white)] transition-all flex items-center gap-2 cursor-pointer"
             >
               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -443,7 +463,7 @@ const DashBoard = () => {
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar bg-[#FAF8F5] dark:bg-[#0f0a1c] transition-colors duration-200 relative">
+        <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar bg-main-bg transition-colors duration-200 relative">
           <div 
             className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none" 
             style={{ 
@@ -453,7 +473,7 @@ const DashBoard = () => {
           />
           
           {/* Personalized Welcome Banner */}
-          <div className="border-[4px] border-black dark:border-white bg-cyan-300 dark:bg-cyan-400 p-6 mb-10 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#8b5cf6] relative overflow-hidden transition-all duration-200 text-black dark:text-black">
+          <div className="border-[4px] border-neon-border bg-cyan-300 dark:bg-cyan-400 p-6 mb-10 shadow-[6px_6px_0px_0px_var(--shadow-pink)] relative overflow-hidden transition-all duration-200 text-black dark:text-black">
             <div 
               className="absolute inset-0 opacity-[0.08] pointer-events-none" 
               style={{ 
@@ -473,16 +493,48 @@ const DashBoard = () => {
               {/* Stats Overview */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
                 {[
-                  { label: "Total Workspaces", value: workspaces.length, color: "bg-[#FF87B2] dark:shadow-[6px_6px_0px_0px_#06b6d4]" },
-                  { label: "Owned Workspaces", value: workspaces.filter(w => w.role === 'OWNER').length, color: "bg-[#60A5FA] dark:shadow-[6px_6px_0px_0px_#ec4899]" },
-                  { label: "Shared Workspaces", value: workspaces.filter(w => w.role !== 'OWNER').length, color: "bg-[#2DD4BF] dark:shadow-[6px_6px_0px_0px_#22d3ee]" },
+                  { 
+                    label: "Total Workspaces", 
+                    value: workspaces.length, 
+                    color: "bg-pink-300 dark:bg-pink-400",
+                    icon: (
+                      <svg className="w-10 h-10 text-black/80 dark:text-black/85" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                    )
+                  },
+                  { 
+                    label: "Owned Workspaces", 
+                    value: workspaces.filter(w => w.role === 'OWNER').length, 
+                    color: "bg-blue-300 dark:bg-blue-400",
+                    icon: (
+                      <svg className="w-10 h-10 text-black/80 dark:text-black/85" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    )
+                  },
+                  { 
+                    label: "Shared Workspaces", 
+                    value: workspaces.filter(w => w.role !== 'OWNER').length, 
+                    color: "bg-emerald-300 dark:bg-emerald-400",
+                    icon: (
+                      <svg className="w-10 h-10 text-black/80 dark:text-black/85" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    )
+                  },
                 ].map((stat, i) => (
                   <div
                     key={i}
-                    className={`border-[4px] border-black dark:border-white ${stat.color.split(" ")[0]} text-black p-6 shadow-[6px_6px_0px_0px_#000] ${stat.color.split(" ").slice(1).join(" ")} hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_#000] dark:hover:shadow-[8px_8px_0px_0px_#fff] transition-all`}
+                    className={`border-[4px] border-neon-border ${stat.color} text-black p-6 shadow-[6px_6px_0px_0px_var(--shadow-pink)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0px_0px_var(--shadow-pink)] transition-all flex items-center justify-between`}
                   >
-                    <p className="text-xs font-black uppercase tracking-wider text-black/60 dark:text-black/50 mb-2">{stat.label}</p>
-                    <h2 className="text-4xl font-black">{stat.value}</h2>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-black/60 mb-2">{stat.label}</p>
+                      <h2 className="text-4xl font-black">{stat.value}</h2>
+                    </div>
+                    <div className="p-3 bg-white/40 border-[3px] border-black rounded-none shadow-[2px_2px_0px_0px_#000] flex items-center justify-center">
+                      {stat.icon}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -509,10 +561,10 @@ const DashBoard = () => {
                     <div
                       key={ws._id || memberDoc._id}
                       onClick={() => navigate(`/workspace/${ws._id}`)}
-                      className="relative bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-6 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899] hover:shadow-[10px_10px_0px_0px_#000] dark:hover:shadow-[10px_10px_0px_0px_#06b6d4] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-[3px_3px_0px_0px_#000] dark:active:shadow-[3px_3px_0px_0px_#06b6d4] transition-all cursor-pointer flex flex-col h-[220px]"
+                      className="relative bg-card-bg border-[4px] border-neon-border p-6 shadow-[6px_6px_0px_0px_var(--shadow-pink)] hover:shadow-[10px_10px_0px_0px_var(--shadow-cyan)] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-[3px_3px_0px_0px_var(--shadow-cyan)] transition-all cursor-pointer flex flex-col h-[220px]"
                     >
                       <div className="flex justify-between items-start mb-auto relative z-10">
-                        <div className={`w-14 h-14 border-[3px] border-black dark:border-[#8b5cf6] flex items-center justify-center shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] font-black text-lg ${colorClass}`}>
+                        <div className={`w-14 h-14 border-[3px] border-neon-border flex items-center justify-center shadow-[3px_3px_0px_0px_var(--shadow-pink)] font-black text-lg ${colorClass}`}>
                           <span>{initials}</span>
                         </div>
                         
@@ -524,7 +576,7 @@ const DashBoard = () => {
                               setSelectedWorkspaceForInvite(ws);
                               setShowInviteModal(true);
                             }}
-                            className="px-3 py-1.5 text-xs bg-cyan-300 border-[2px] border-black dark:border-white font-black uppercase tracking-wider text-black dark:text-black shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#8b5cf6] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#8b5cf6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+                            className="px-3 py-1.5 text-xs bg-cyan-300 border-[2px] border-neon-border font-black uppercase tracking-wider text-black dark:text-black shadow-[2px_2px_0px_0px_var(--shadow-purple)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-purple)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
                           >
                             + Invite
                           </button>
@@ -544,7 +596,7 @@ const DashBoard = () => {
                           <span>Just now</span>
                         </div>
 
-                        <span className={`inline-flex px-3 py-1 text-xs font-black uppercase border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#8b5cf6] ${roleColor}`}>
+                        <span className={`inline-flex px-3 py-1 text-xs font-black uppercase border-[2px] border-neon-border shadow-[2px_2px_0px_0px_var(--shadow-purple)] ${roleColor}`}>
                           {role}
                         </span>
                       </div>
@@ -555,9 +607,9 @@ const DashBoard = () => {
                 {/* Create New Card */}
                 <div
                   onClick={() => setShowModal(true)}
-                  className="border-[4px] border-dashed border-black dark:border-[#8b5cf6] bg-cyan-50 dark:bg-[#1e173e] hover:bg-cyan-100 dark:hover:bg-[#251d4a] hover:shadow-[6px_6px_0px_0px_#000] dark:hover:shadow-[6px_6px_0px_0px_#ec4899] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer flex flex-col items-center justify-center min-h-[220px]"
+                  className="border-[4px] border-dashed border-neon-border bg-cyan-50 dark:bg-hover-bg hover:bg-cyan-100 dark:hover:bg-card-bg hover:shadow-[6px_6px_0px_0px_var(--shadow-pink)] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer flex flex-col items-center justify-center min-h-[220px]"
                 >
-                  <div className="w-14 h-14 border-[3px] border-black dark:border-white bg-white dark:bg-zinc-800 flex items-center justify-center shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] mb-3">
+                  <div className="w-14 h-14 border-[3px] border-neon-border bg-white dark:bg-zinc-800 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--shadow-white)] mb-3">
                     <svg className="w-6 h-6 text-black dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
@@ -573,7 +625,7 @@ const DashBoard = () => {
               {loadingDocs ? (
                 <div className="text-center py-20 font-black uppercase text-black/60 dark:text-zinc-400">Loading canvases...</div>
               ) : filteredProjects.length === 0 ? (
-                <div className="border-[4px] border-dashed border-black dark:border-[#8b5cf6] p-12 text-center bg-white dark:bg-[#1a1435] shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899] rotate-[-0.5deg]">
+                <div className="border-[4px] border-dashed border-neon-border p-12 text-center bg-card-bg shadow-[6px_6px_0px_0px_var(--shadow-pink)] rotate-[-0.5deg]">
                   <p className="font-black uppercase text-lg mb-2 text-black dark:text-white">No Canvases Found</p>
                   <p className="text-sm font-bold text-black/60 dark:text-zinc-400 uppercase">Go to a workspace to design canvases</p>
                 </div>
@@ -583,16 +635,16 @@ const DashBoard = () => {
                     <div
                       key={doc._id}
                       onClick={() => navigate(`/workspace/${doc.workspaceId}`)}
-                      className="bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-6 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899] hover:shadow-[10px_10px_0px_0px_#000] dark:hover:shadow-[10px_10px_0px_0px_#06b6d4] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer flex flex-col h-[180px]"
+                      className="bg-card-bg border-[4px] border-neon-border p-6 shadow-[6px_6px_0px_0px_var(--shadow-pink)] hover:shadow-[10px_10px_0px_0px_var(--shadow-cyan)] hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer flex flex-col h-[180px]"
                     >
                       <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-wider bg-orange-300 border-2 border-black px-2 py-0.5 shadow-[1.5px_1.5px_0px_0px_#000] text-black inline-block mb-3 truncate max-w-full">
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-orange-300 border-2 border-neon-border px-2 py-0.5 shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] text-black inline-block mb-3 truncate max-w-full">
                           🏢 {doc.workspaceName}
                         </span>
                         <h3 className="text-xl font-extrabold mb-2 truncate text-black dark:text-white">
                           🎨 {doc.title}
                         </h3>
-                        <p className="text-xs font-bold text-black/50 dark:text-zinc-450 uppercase mt-auto">
+                        <p className="text-xs font-bold text-black/50 dark:text-zinc-400 uppercase mt-auto">
                           Updated: {new Date(doc.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -608,7 +660,7 @@ const DashBoard = () => {
               {loadingMembers ? (
                 <div className="text-center py-20 font-black uppercase text-black/60 dark:text-zinc-400">Loading teammates...</div>
               ) : filteredMembers.length === 0 ? (
-                <div className="border-[4px] border-dashed border-black dark:border-[#8b5cf6] p-12 text-center bg-white dark:bg-[#1a1435] shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899]">
+                <div className="border-[4px] border-dashed border-neon-border p-12 text-center bg-card-bg shadow-[6px_6px_0px_0px_var(--shadow-pink)]">
                   <p className="font-black uppercase text-lg mb-2 text-black dark:text-white">No Teammates Found</p>
                 </div>
               ) : (
@@ -616,10 +668,10 @@ const DashBoard = () => {
                   {filteredMembers.map((m) => (
                     <div
                       key={m.userId?._id || m.email}
-                      className="bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-6 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899] flex flex-col min-h-[200px]"
+                      className="bg-card-bg border-[4px] border-neon-border p-6 shadow-[6px_6px_0px_0px_var(--shadow-pink)] flex flex-col min-h-[200px]"
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 border-[3px] border-black dark:border-[#8b5cf6] bg-cyan-300 text-black flex items-center justify-center font-black text-sm shadow-[2px_2px_0px_0px_#000]">
+                        <div className="w-12 h-12 border-[3px] border-neon-border bg-cyan-300 text-black flex items-center justify-center font-black text-sm shadow-[2px_2px_0px_0px_var(--shadow-white)]">
                           {(m.username || "U").slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -630,15 +682,33 @@ const DashBoard = () => {
                       <div className="mt-auto pt-4 border-t-2 border-black dark:border-white/10 space-y-2">
                         <p className="text-[10px] font-black uppercase text-black/40 dark:text-zinc-500">Shared Workspaces</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {m.workspaces.map((ws, i) => (
-                            <span
-                              key={i}
-                              className="text-[9px] font-black uppercase bg-purple-100 dark:bg-purple-950 border border-black dark:border-white/30 px-2 py-0.5 text-black dark:text-white rounded-none"
-                              title={`${ws.workspaceName} (${ws.status})`}
-                            >
-                              {ws.workspaceName} ({ws.role})
-                            </span>
-                          ))}
+                          {m.workspaces.map((ws, i) => {
+                            const myMembership = workspaces.find(w => (w.workspaceId?._id || w.workspaceId) === ws.workspaceId);
+                            const isOwnerOfWS = myMembership && myMembership.role === "OWNER";
+                            const canRemove = isOwnerOfWS && ws.role !== "OWNER";
+
+                            return (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 text-[9px] font-black uppercase bg-purple-100 dark:bg-purple-950 border border-black dark:border-white/30 px-2 py-0.5 text-black dark:text-white rounded-none"
+                                title={`${ws.workspaceName} (${ws.status})`}
+                              >
+                                {ws.workspaceName} ({ws.role})
+                                {canRemove && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveMemberFromDashboard(ws.workspaceId, ws.memberId, m.username);
+                                    }}
+                                    className="ml-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-black cursor-pointer transition-colors text-[10px]"
+                                    title={`Remove from ${ws.workspaceName}`}
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -653,7 +723,7 @@ const DashBoard = () => {
               {loadingInvites ? (
                 <div className="text-center py-20 font-black uppercase text-black/60 dark:text-zinc-400">Loading invitations...</div>
               ) : filteredInvites.length === 0 ? (
-                <div className="border-[4px] border-dashed border-black dark:border-[#8b5cf6] p-12 text-center bg-white dark:bg-[#1a1435] shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899]">
+                <div className="border-[4px] border-dashed border-neon-border p-12 text-center bg-card-bg shadow-[6px_6px_0px_0px_var(--shadow-pink)]">
                   <p className="font-black uppercase text-lg mb-2 text-black dark:text-white">No Pending Invitations</p>
                   <p className="text-sm font-bold text-black/60 dark:text-zinc-400 uppercase">You have accepted or cleared all pending invites</p>
                 </div>
@@ -662,7 +732,7 @@ const DashBoard = () => {
                   {filteredInvites.map((inv) => (
                     <div
                       key={inv._id}
-                      className="bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-6 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#ec4899] flex flex-col h-[200px]"
+                      className="bg-card-bg border-[4px] border-neon-border p-6 shadow-[6px_6px_0px_0px_var(--shadow-pink)] flex flex-col h-[200px]"
                     >
                       <div className="flex-1">
                         <h4 className="font-black text-lg text-black dark:text-white uppercase tracking-tight mb-2 truncate">
@@ -675,13 +745,13 @@ const DashBoard = () => {
                       <div className="flex gap-4">
                         <button
                           onClick={() => handleAcceptInvite(inv.inviteToken)}
-                          className="flex-1 py-3 bg-emerald-300 border-[2.5px] border-black font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black"
+                          className="flex-1 py-3 bg-emerald-300 border-[2.5px] border-neon-border font-black uppercase text-xs shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black"
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleDeclineInvite(inv.inviteToken)}
-                          className="flex-1 py-3 bg-red-400 border-[2.5px] border-black font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black"
+                          className="flex-1 py-3 bg-red-400 border-[2.5px] border-neon-border font-black uppercase text-xs shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black"
                         >
                           Decline
                         </button>
@@ -703,7 +773,7 @@ const DashBoard = () => {
             onClick={() => setShowModal(false)}
           />
           <div 
-            className="relative bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-8 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] dark:shadow-[10px_10px_0px_0px_#ec4899] w-full max-w-md"
+            className="relative bg-card-bg border-[4px] border-neon-border p-8 shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md"
           >
             <h2 className="text-2xl font-black uppercase mb-1">New Workspace</h2>
             <p className="text-black/60 dark:text-zinc-400 font-bold text-xs uppercase tracking-wide mb-6">Create a collaborative space for your team</p>
@@ -716,7 +786,7 @@ const DashBoard = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full px-5 py-4 bg-white dark:bg-[#221a48] border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-450 font-bold shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
+                className="w-full px-5 py-4 bg-card-bg border-[3px] border-neon-border text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-450 font-bold shadow-[3px_3px_0px_0px_var(--shadow-pink)] focus:shadow-[5px_5px_0px_0px_var(--shadow-pink)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
                 placeholder="e.g. Acme Marketing"
               />
             </div>
@@ -724,13 +794,13 @@ const DashBoard = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-black dark:border-white bg-white dark:bg-[#1a1435] text-black dark:text-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#ec4899] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#ec4899] transition-all cursor-pointer"
+                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-neon-border bg-card-bg text-black dark:text-white shadow-[4px_4px_0px_0px_var(--shadow-pink)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={addWorkspace}
-                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-black dark:border-white bg-cyan-300 text-black dark:text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#8b5cf6] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#8b5cf6] transition-all cursor-pointer"
+                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-neon-border bg-cyan-300 text-black shadow-[4px_4px_0px_0px_var(--shadow-purple)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
               >
                 Create Now
               </button>
@@ -753,7 +823,7 @@ const DashBoard = () => {
             }}
           />
           <div 
-            className="relative bg-white dark:bg-[#1a1435] border-[4px] border-black dark:border-[#8b5cf6] p-8 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] dark:shadow-[10px_10px_0px_0px_#ec4899] w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
+            className="relative bg-card-bg border-[4px] border-neon-border p-8 shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
           >
             <h2 className="text-2xl font-black uppercase mb-1">Invite Member</h2>
             <p className="text-black/60 dark:text-zinc-400 font-bold text-xs uppercase tracking-wide mb-6">
@@ -781,7 +851,7 @@ const DashBoard = () => {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 autoFocus
-                className="w-full px-5 py-4 bg-white dark:bg-[#221a48] border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-450 font-bold shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] focus:shadow-[5px_5px_0px_0px_#000] dark:focus:shadow-[5px_5px_0px_0px_#ec4899] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
+                className="w-full px-5 py-4 bg-card-bg border-[3px] border-neon-border text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-450 font-bold shadow-[3px_3px_0px_0px_var(--shadow-pink)] focus:shadow-[5px_5px_0px_0px_var(--shadow-pink)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
                 placeholder="teammate@example.com"
               />
             </div>
@@ -793,7 +863,7 @@ const DashBoard = () => {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full px-5 py-4 bg-white dark:bg-[#221a48] border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white font-bold shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#ec4899] outline-none cursor-pointer"
+                className="w-full px-5 py-4 bg-card-bg border-[3px] border-neon-border text-black dark:text-white font-bold shadow-[3px_3px_0px_0px_var(--shadow-pink)] outline-none cursor-pointer"
               >
                 <option value="VIEWER">Viewer</option>
                 <option value="EDITOR">Editor</option>
@@ -810,13 +880,13 @@ const DashBoard = () => {
                   setInviteError("");
                   setInviteSuccess("");
                 }}
-                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-black dark:border-white bg-white dark:bg-[#1a1435] text-black dark:text-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#ec4899] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#ec4899] transition-all cursor-pointer"
+                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-neon-border bg-card-bg text-black dark:text-white shadow-[4px_4px_0px_0px_var(--shadow-pink)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={inviteMemberToWorkspace}
-                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-black dark:border-white bg-cyan-300 text-black dark:text-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#8b5cf6] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000] dark:active:shadow-[2px_2px_0px_0px_#8b5cf6] transition-all cursor-pointer"
+                className="flex-1 px-5 py-4 font-black uppercase border-[3px] border-neon-border bg-cyan-300 text-black shadow-[4px_4px_0px_0px_var(--shadow-purple)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
               >
                 Send Invite
               </button>

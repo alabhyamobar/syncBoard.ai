@@ -71,8 +71,8 @@ const AcceptInvite = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#121214] flex flex-col justify-center items-center p-6 selection:bg-cyan-300 font-sans transition-colors duration-200">
-      <div className="max-w-md w-full bg-white dark:bg-[#150e2a] border-[4px] border-black dark:border-[#8b5cf6] shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#8b5cf6] p-8 text-center space-y-6">
+    <div className="min-h-screen bg-main-bg flex flex-col justify-center items-center p-6 selection:bg-cyan-300 font-sans transition-colors duration-200">
+      <div className="max-w-md w-full bg-card-bg border-[4px] border-neon-border shadow-[8px_8px_0px_0px_var(--shadow-purple)] p-8 text-center space-y-6">
         <h1 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white">
           Workspace Invitation
         </h1>
@@ -89,7 +89,7 @@ const AcceptInvite = () => {
             </div>
             <button
               onClick={() => navigate(user ? "/dashboard" : "/")}
-              className="w-full py-3 bg-white dark:bg-zinc-800 border-[3px] border-black dark:border-white text-black dark:text-white font-black uppercase text-sm shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+              className="w-full py-3 bg-card-bg border-[3px] border-neon-border text-black dark:text-white font-black uppercase text-sm shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
             >
               {user ? "Go to Dashboard" : "Go to Sign In"}
             </button>
@@ -100,7 +100,7 @@ const AcceptInvite = () => {
               <p className="text-sm font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wide">
                 You have been invited by <span className="font-extrabold text-black dark:text-white underline">{workspaceInfo?.invitedBy}</span> to join:
               </p>
-              <div className="p-4 bg-cyan-100 dark:bg-cyan-950/45 border-[3px] border-black dark:border-[#8b5cf6] font-black text-xl text-black dark:text-white uppercase tracking-wide shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#8b5cf6]">
+              <div className="p-4 bg-cyan-100 dark:bg-cyan-950/45 border-[3px] border-neon-border font-black text-xl text-black dark:text-white uppercase tracking-wide shadow-[3px_3px_0px_0px_var(--shadow-purple)]">
                 🏢 {workspaceInfo?.name}
               </div>
             </div>
@@ -120,14 +120,14 @@ const AcceptInvite = () => {
                   <button
                     onClick={handleDecline}
                     disabled={processing}
-                    className="flex-1 py-3 bg-white dark:bg-[#1a1435] border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white font-black uppercase text-sm hover:bg-zinc-50 dark:hover:bg-[#251d4a] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#8b5cf6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
+                    className="flex-1 py-3 bg-card-bg border-[3px] border-neon-border text-black dark:text-white font-black uppercase text-sm hover:bg-zinc-50 dark:hover:bg-hover-bg hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-purple)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
                   >
                     Decline
                   </button>
                   <button
                     onClick={handleAccept}
                     disabled={processing}
-                    className="flex-1 py-3 bg-purple-300 dark:bg-purple-600 border-[3px] border-black dark:border-white text-black dark:text-white font-black uppercase text-sm shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
+                    className="flex-1 py-3 bg-purple-300 dark:bg-purple-600 border-[3px] border-neon-border text-black dark:text-white font-black uppercase text-sm shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
                   >
                     {processing ? "Joining..." : "Accept & Join"}
                   </button>
@@ -140,7 +140,7 @@ const AcceptInvite = () => {
                 </div>
                 <button
                   onClick={handleAuthRedirect}
-                  className="w-full py-3.5 bg-cyan-300 border-[3px] border-black font-black uppercase text-sm text-black shadow-[4px_4px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+                  className="w-full py-3.5 bg-cyan-300 border-[3px] border-neon-border font-black uppercase text-sm text-black shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
                 >
                   Log In or Sign Up
                 </button>

@@ -7,7 +7,7 @@ import React from "react";
 const WorkspaceWelcome = ({ onOpenCreateModal }) => {
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-6 text-center select-none">
-      <div className="border-[4px] border-black dark:border-white bg-cyan-300 dark:bg-cyan-400 p-8 max-w-xl shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#ec4899] text-black relative overflow-hidden">
+      <div className="border-[4px] border-neon-border bg-cyan-300 dark:bg-cyan-400 p-8 max-w-xl shadow-[8px_8px_0px_0px_var(--shadow-pink)] text-black relative overflow-hidden">
         <div 
           className="absolute inset-0 opacity-[0.08] pointer-events-none" 
           style={{ 
@@ -26,7 +26,7 @@ const WorkspaceWelcome = ({ onOpenCreateModal }) => {
           </p>
           <button
             onClick={onOpenCreateModal}
-            className="px-6 py-3 bg-white border-[3px] border-black font-black uppercase text-black shadow-[4px_4px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer inline-flex items-center gap-2"
+            className="px-6 py-3 bg-white border-[3px] border-neon-border font-black uppercase text-black shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer inline-flex items-center gap-2"
           >
             ✦ Create New Canvas
           </button>

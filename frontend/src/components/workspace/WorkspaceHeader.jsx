@@ -20,7 +20,7 @@ const WorkspaceHeader = ({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="flex justify-between items-center px-6 py-4 border-b-[4px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#150e2a] sticky top-0 z-20">
+    <header className="flex justify-between items-center px-6 py-4 border-b-[4px] border-neon-border bg-panel-bg sticky top-0 z-20">
       
       {/* Left: hamburger + title */}
       <div className="flex items-center gap-4">
@@ -32,7 +32,7 @@ const WorkspaceHeader = ({
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-
+ 
         {activeDoc ? (
           <div className="flex items-center gap-3">
             <span className="text-lg font-black uppercase">🎨</span>
@@ -45,11 +45,11 @@ const WorkspaceHeader = ({
               placeholder="Untitled Canvas"
             />
             {isSaving ? (
-              <span className="text-[9px] font-black bg-blue-200 dark:bg-blue-300 text-black px-2 py-0.5 border-[2px] border-black shadow-[1px_1px_0px_0px_#000] uppercase animate-pulse rotate-[-1deg] inline-block select-none">
+              <span className="text-[9px] font-black bg-blue-200 dark:bg-blue-300 text-black px-2 py-0.5 border-[2px] border-black shadow-[1px_1px_0px_0px_var(--shadow-white)] uppercase animate-pulse rotate-[-1deg] inline-block select-none">
                 Saving...
               </span>
             ) : (
-              <span className="text-[9px] font-black bg-emerald-300 dark:bg-emerald-400 text-black px-2 py-0.5 border-[2px] border-black shadow-[1.5px_1.5px_0px_0px_#000] uppercase rotate-[2deg] inline-block select-none">
+              <span className="text-[9px] font-black bg-emerald-300 dark:bg-emerald-400 text-black px-2 py-0.5 border-[2px] border-black shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] uppercase rotate-[2deg] inline-block select-none">
                 Saved ✓
               </span>
             )}
@@ -60,10 +60,10 @@ const WorkspaceHeader = ({
           </h1>
         )}
       </div>
-
+ 
       {/* Center: View Mode Segmented Control */}
       {activeDoc && (
-        <div className="flex border-[3px] border-black dark:border-[#8b5cf6] shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#8b5cf6] rounded overflow-hidden">
+        <div className="flex border-[3px] border-neon-border shadow-[2px_2px_0px_0px_var(--shadow-purple)] rounded overflow-hidden">
           {[
             { mode: "notes", label: "Notes", longLabel: "Notes Only" },
             { mode: "split", label: "Split", longLabel: "Split View" },
@@ -72,10 +72,10 @@ const WorkspaceHeader = ({
             <button
               key={v.mode}
               onClick={() => setViewMode(v.mode)}
-              className={`px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-xs font-black uppercase tracking-wider cursor-pointer border-r-2 last:border-r-0 border-black dark:border-[#8b5cf6] transition-colors ${
+              className={`px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-xs font-black uppercase tracking-wider cursor-pointer border-r-2 last:border-r-0 border-neon-border transition-colors ${
                 viewMode === v.mode
                   ? "bg-cyan-300 text-black"
-                  : "bg-white dark:bg-zinc-800 text-black dark:text-white"
+                  : "bg-card-bg text-black dark:text-white"
               }`}
             >
               <span className="hidden sm:inline">{v.longLabel}</span>
@@ -84,12 +84,12 @@ const WorkspaceHeader = ({
           ))}
         </div>
       )}
-
+ 
       {/* Right: Theme toggle + Dashboard */}
       <div className="flex items-center gap-3">
         <button
           onClick={toggleTheme}
-          className="p-2 bg-white dark:bg-zinc-800 border-[3px] border-black dark:border-[#8b5cf6] text-black dark:text-white shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#22d3ee] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#22d3ee] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
+          className="p-2 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[3px_3px_0px_0px_var(--shadow-cyan)] hover:shadow-[5px_5px_0px_0px_var(--shadow-cyan)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
         >
           {theme === "dark" ? (
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -103,7 +103,7 @@ const WorkspaceHeader = ({
         </button>
         <button
           onClick={() => navigate("/dashboard")}
-          className="px-4 py-2 border-[3px] border-black bg-cyan-300 text-black font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+          className="px-4 py-2 border-[3px] border-neon-border bg-cyan-300 text-black font-black uppercase text-xs shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
         >
           Dashboard
         </button>

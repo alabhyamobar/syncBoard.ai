@@ -172,7 +172,7 @@ export const removeMember = async ({ workspaceId, memberId }) => {
     throw new Error("Cannot remove owner");
   }
 
-  return member.remove();
+  return member.deleteOne();
 };
 
 export const getUserWorkspaces = async (userId) => {

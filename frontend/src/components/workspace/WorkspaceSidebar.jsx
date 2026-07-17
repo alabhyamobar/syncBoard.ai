@@ -36,13 +36,13 @@ const WorkspaceSidebar = ({
       className={`
         fixed md:relative z-50 flex flex-col 
         w-[280px] h-full 
-        bg-white dark:bg-[#150e2a] border-r-[4px] border-black dark:border-[#8b5cf6]
+        bg-panel-bg border-r-[4px] border-neon-border
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}
     >
       {/* Workspace Brand Head */}
-      <div className="p-5 border-b-[4px] border-black dark:border-[#8b5cf6] bg-cyan-300 flex items-center justify-between relative overflow-hidden shrink-0">
+      <div className="p-5 border-b-[4px] border-neon-border bg-cyan-300 flex items-center justify-between relative overflow-hidden shrink-0">
         <div 
           className="absolute inset-0 opacity-[0.08] pointer-events-none" 
           style={{ 
@@ -79,13 +79,13 @@ const WorkspaceSidebar = ({
         {/* Canvases List */}
         <div>
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-zinc-500">
+            <span className="text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-zinc-400">
               Canvases
             </span>
             {!isViewer && (
               <button
                 onClick={onOpenCreateModal}
-                className="px-2.5 py-1 text-[10px] font-black uppercase bg-purple-300 dark:bg-purple-600 border-[2px] border-black dark:border-white shadow-[1px_1px_0px_0px_#000] dark:shadow-[1px_1px_0px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_#000] dark:hover:shadow-[2.5px_2.5px_0px_0px_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black dark:text-white"
+                className="px-2.5 py-1 text-[10px] font-black uppercase bg-purple-300 dark:bg-purple-600 border-[2px] border-neon-border shadow-[1px_1px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black dark:text-white"
               >
                 + New
               </button>
@@ -108,10 +108,10 @@ const WorkspaceSidebar = ({
                       onSelectDoc(doc);
                       onCloseSidebar();
                     }}
-                    className={`flex-1 text-left px-3.5 pr-10 py-2.5 border-[2px] border-black dark:border-[#8b5cf6] font-black text-xs uppercase transition-all cursor-pointer truncate ${
+                    className={`flex-1 text-left px-3.5 pr-10 py-2.5 border-[2px] border-neon-border font-black text-xs uppercase transition-all cursor-pointer truncate ${
                       activeDoc?._id === doc._id
-                        ? "bg-cyan-300 dark:bg-cyan-400 text-black shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#8b5cf6]"
-                        : "bg-white dark:bg-[#1a1435] text-black dark:text-white hover:bg-cyan-50 dark:hover:bg-[#251d4a]"
+                        ? "bg-cyan-300 dark:bg-cyan-400 text-black shadow-[3px_3px_0px_0px_var(--shadow-purple)]"
+                        : "bg-card-bg text-black dark:text-white hover:bg-cyan-50 dark:hover:bg-hover-bg"
                     }`}
                   >
                     🎨 {doc.title}
@@ -124,7 +124,7 @@ const WorkspaceSidebar = ({
                           onDeleteDoc(doc._id, doc.title);
                         }
                       }}
-                      className="absolute right-2.5 opacity-0 group-hover:opacity-100 p-1 border-[2px] border-black dark:border-white bg-red-400 dark:bg-red-500 hover:bg-red-500 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[1.5px_1.5px_0px_0px_#000] dark:hover:shadow-[1.5px_1.5px_0px_0px_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black dark:text-white"
+                      className="absolute right-2.5 opacity-0 group-hover:opacity-100 p-1 border-[2px] border-neon-border bg-red-400 dark:bg-red-500 hover:bg-red-500 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-black dark:text-white"
                       title="Delete canvas"
                     >
                       <svg
@@ -151,12 +151,12 @@ const WorkspaceSidebar = ({
 
         {/* Members / Invite Section */}
         <div className="pt-4 border-t-2 border-black/10 dark:border-white/10">
-          <span className="block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-zinc-500 mb-3">
+          <span className="block text-[10px] font-black uppercase tracking-wider text-black/40 dark:text-zinc-400 mb-3">
             Teammates
           </span>
 
           {isViewer ? (
-            <div className="text-[11px] font-bold text-center text-zinc-400 py-3 uppercase border-[2px] border-dashed border-black/10 dark:border-white/10 mb-4 bg-zinc-50 dark:bg-[#1a1435]/30">
+            <div className="text-[11px] font-bold text-center text-zinc-400 py-3 uppercase border-[2px] border-dashed border-neon-border border-opacity-10 mb-4 bg-zinc-50 dark:bg-hover-bg/30">
               Only admins can invite
             </div>
           ) : (
@@ -166,12 +166,12 @@ const WorkspaceSidebar = ({
                 placeholder="Teammate's email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-white dark:bg-[#221a48] border-[2px] border-black dark:border-[#8b5cf6] text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-500 font-bold outline-none"
+                className="w-full px-3 py-2 text-xs bg-card-bg border-[2px] border-neon-border text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-500 font-bold outline-none"
               />
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-white dark:bg-[#221a48] border-[2px] border-black dark:border-[#8b5cf6] text-black dark:text-white font-bold outline-none cursor-pointer"
+                className="w-full px-3 py-2 text-xs bg-card-bg border-[2px] border-neon-border text-black dark:text-white font-bold outline-none cursor-pointer"
               >
                 <option value="VIEWER">Viewer</option>
                 <option value="EDITOR">Editor</option>
@@ -179,7 +179,7 @@ const WorkspaceSidebar = ({
               </select>
               <button
                 type="submit"
-                className="w-full py-2 text-xs font-black uppercase bg-emerald-300 border-[2px] border-black text-black hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+                className="w-full py-2 text-xs font-black uppercase bg-emerald-300 border-[2px] border-neon-border text-black hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
               >
                 Send Invite
               </button>
@@ -200,7 +200,7 @@ const WorkspaceSidebar = ({
             {members.map((member) => (
               <div
                 key={member._id}
-                className="flex items-center gap-2 p-2 border-[2px] border-black dark:border-white/20 bg-zinc-50 dark:bg-[#1a1435] text-xs font-bold truncate text-black dark:text-white"
+                className="flex items-center gap-2 p-2 border-[2px] border-neon-border border-opacity-20 bg-zinc-50 dark:bg-card-bg text-xs font-bold truncate text-black dark:text-white"
               >
                 <div className="w-6 h-6 bg-purple-300 text-black rounded-full flex items-center justify-center font-black text-[10px] uppercase shrink-0">
                   {member.userId?.username?.slice(0, 2) || member.email?.slice(0, 2) || "U"}
@@ -215,7 +215,7 @@ const WorkspaceSidebar = ({
                         <select
                           value={member.role}
                           onChange={(e) => onChangeMemberRole(member._id, e.target.value)}
-                          className="text-[9px] uppercase font-black px-1 py-0.5 bg-orange-100 dark:bg-orange-300 text-black border border-black outline-none cursor-pointer"
+                          className="text-[9px] uppercase font-black px-1 py-0.5 bg-orange-100 dark:bg-orange-300 text-black border-2 border-neon-border outline-none cursor-pointer"
                         >
                           <option value="VIEWER">Viewer</option>
                           <option value="EDITOR">Editor</option>
@@ -223,14 +223,14 @@ const WorkspaceSidebar = ({
                         </select>
                         <button
                           onClick={() => onRemoveMember(member._id, member.userId?.username || member.userId?.email)}
-                          className="p-1 border border-black bg-red-400 text-black hover:bg-red-500 font-bold text-[9px] cursor-pointer transition-colors"
+                          className="p-1 border-2 border-neon-border bg-red-400 text-black hover:bg-red-500 font-bold text-[9px] cursor-pointer transition-colors"
                           title="Remove teammate"
                         >
                           ✕
                         </button>
                       </>
                     ) : (
-                      <span className="text-[9px] uppercase font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-200 text-black border border-black">
+                      <span className="text-[9px] uppercase font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-200 text-black border-2 border-neon-border">
                         {member.role}
                       </span>
                     )}
@@ -248,8 +248,8 @@ const WorkspaceSidebar = ({
       </div>
 
       {/* Footer / User Card */}
-      <div className="p-4 border-t-[4px] border-black dark:border-[#8b5cf6] bg-zinc-50 dark:bg-[#150e2a] flex items-center gap-3">
-        <div className="w-8 h-8 border-[2px] border-black dark:border-[#8b5cf6] bg-white dark:bg-[#1a1435] flex items-center justify-center shadow-[1px_1px_0px_0px_#000] overflow-hidden shrink-0">
+      <div className="p-4 border-t-[4px] border-neon-border bg-zinc-50 dark:bg-panel-bg flex items-center gap-3">
+        <div className="w-8 h-8 border-[2px] border-neon-border bg-white dark:bg-card-bg flex items-center justify-center shadow-[1px_1px_0px_0px_var(--shadow-white)] overflow-hidden shrink-0">
           {user?.avatar ? (
             <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
           ) : (
