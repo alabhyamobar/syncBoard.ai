@@ -116,12 +116,20 @@ export const googleCallback = async (req, res) => {
 
   const accessToken = generateAccessToken(user, session._id);
 
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" ? true : false,
+    secure: isProduction,
     sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`);
+  const frontendUrl = (process.env.FRONTEND_URL || "").trim() || (
+    isProduction
+      ? (process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app").trim()
+      : (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim()
+  );
+
+  res.redirect(`${frontendUrl}/dashboard`);
 };
