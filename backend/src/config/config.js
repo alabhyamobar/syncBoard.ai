@@ -12,11 +12,19 @@ if(!process.env.JWT_REFRESH_SECRET){
     throw new Error("JWT_REFRESH_SECRET is not defined in environment variables")
 }
 
-const callbackUrl = (process.env.GOOGLE_CALLBACK_URL || "").trim() || (
-  process.env.NODE_ENV === "production"
-    ? (process.env.GOOGLE_CALLBACK_PROD_URL || "").trim()
-    : (process.env.GOOGLE_CALLBACK_DEV_URL || "").trim()
-);
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+
+let callbackUrl = (process.env.GOOGLE_CALLBACK_URL || "").trim();
+
+if (!callbackUrl) {
+  callbackUrl = isProduction
+    ? (process.env.GOOGLE_CALLBACK_PROD_URL || "https://syncboard-ai.onrender.com/api/auth/google/callback").trim()
+    : (process.env.GOOGLE_CALLBACK_DEV_URL || "http://localhost:5000/api/auth/google/callback").trim();
+}
+
+if (isProduction && callbackUrl.includes("localhost")) {
+  callbackUrl = (process.env.GOOGLE_CALLBACK_PROD_URL || "https://syncboard-ai.onrender.com/api/auth/google/callback").trim();
+}
 
 if (!process.env.GOOGLE_ID || !process.env.GOOGLE_SECRET || !callbackUrl) {
     throw new Error("Google OAuth ID, Secret, or Callback URL is not defined in environment variables");
