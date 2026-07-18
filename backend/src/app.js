@@ -22,7 +22,7 @@ app.use(
   cors({
     origin: [
       process.env.FRONTEND_DEV_URL || "http://localhost:5173",
-      process.env.FRONTEND_PROD_URL || "https://syncboard-frontend.vercel.app"
+      process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app"
     ],
     credentials: true, 
   }),
