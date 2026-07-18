@@ -5,20 +5,24 @@ const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 let redisClient = null;
 let subClient = null;
 let isRedisReady = false;
+let connectionFailed = false;
 
 try {
   console.log(`[Redis] Connecting to ${redisUrl}...`);
   
   redisClient = new Redis(redisUrl, {
     maxRetriesPerRequest: 1,
-    connectTimeout: 5000,
+    connectTimeout: 2000,
     retryStrategy(times) {
-      if (times > 3) {
-        console.warn("[Redis] Max connection retries exceeded. Operating in fallback local-memory mode.");
+      if (times > 2) {
+        if (!connectionFailed) {
+          console.warn("[Redis] Local Redis connection refused or not running. Operating in fallback local-memory mode.");
+          connectionFailed = true;
+        }
         isRedisReady = false;
         return null;
       }
-      return Math.min(times * 100, 2000);
+      return 100;
     }
   });
 
@@ -26,16 +30,25 @@ try {
 
   redisClient.on("connect", () => {
     isRedisReady = true;
-    console.log("[Redis] Main client connected successfully.");
+    console.log("[Redis] Connected successfully.");
   });
 
   redisClient.on("error", (err) => {
-    console.warn(`[Redis] Main client connection error: ${err.message}. Fallback mode active.`);
+    if (err.code === "ECONNREFUSED") {
+      if (!connectionFailed) {
+        console.warn("[Redis] Local Redis connection refused or not running. Operating in fallback local-memory mode.");
+        connectionFailed = true;
+      }
+    } else {
+      console.warn(`[Redis] Connection error: ${err.message}`);
+    }
     isRedisReady = false;
   });
 
   subClient.on("error", (err) => {
-    console.warn(`[Redis] Sub client connection error: ${err.message}. Fallback mode active.`);
+    if (err.code !== "ECONNREFUSED") {
+      console.warn(`[Redis] Sub client error: ${err.message}`);
+    }
     isRedisReady = false;
   });
 } catch (error) {

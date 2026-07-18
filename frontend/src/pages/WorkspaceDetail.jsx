@@ -172,6 +172,7 @@ const WorkspaceDetail = () => {
                     value={notesContent}
                     onChange={setNotesContent}
                     readOnly={isViewer}
+                    editorRef={editorRef}
                   />
                 </div>
               )}

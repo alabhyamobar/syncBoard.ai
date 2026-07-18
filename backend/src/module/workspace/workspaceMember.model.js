@@ -120,11 +120,11 @@ workspaceMemberSchema.methods.acceptInvite = function (userId) {
   return this.save();
 };
 
-workspaceMemberSchema.methods.remove = function () {
+workspaceMemberSchema.method('remove', function () {
   this.status = "REMOVED";
   this.removedAt = new Date();
   return this.save();
-};
+}, { suppressWarning: true });
 
 workspaceMemberSchema.statics.getActiveMembers = function (workspaceId) {
   return this.find({

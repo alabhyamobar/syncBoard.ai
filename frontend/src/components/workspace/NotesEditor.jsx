@@ -1,87 +1,412 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
+import api from "../../api";
 
-/**
- * NotesEditor
- * Left-pane collaborative notes textarea with markdown helper buttons.
- *
- * Props:
- *   value       {string}   - current notes content
- *   onChange    {function} - (newValue: string) => void
- */
-const NotesEditor = ({ value, onChange, readOnly = false }) => {
+const parseMarkdown = (markdown) => {
+  if (!markdown) return "<p class='text-zinc-400 italic'>No content to preview.</p>";
+
+  let html = markdown
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  html = html.replace(/```(javascript|html|css|json|bash)?\n([\s\S]*?)\n```/g, '<pre class="bg-zinc-100 dark:bg-zinc-900/60 p-4 rounded-md border-[2px] border-neon-border font-mono text-xs my-4 overflow-x-auto text-black dark:text-zinc-100 font-bold">$2</pre>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-zinc-150 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-neon-border font-mono text-xs text-pink-500">$1</code>');
+  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong class="font-black text-black dark:text-white">$1</strong>');
+  html = html.replace(/\*([\s\S]+?)\*/g, '<em class="italic text-zinc-900 dark:text-zinc-100">$1</em>');
+  html = html.replace(/~~([\s\S]+?)~~/g, '<del class="line-through text-zinc-400">$1</del>');
+  
+  html = html.replace(/^\- \[\ \](.*$)/gim, '<li class="list-none flex items-center gap-2 my-1 text-black dark:text-white"><input type="checkbox" disabled class="accent-violet-500 w-4 h-4 pointer-events-none rounded border-2 border-neon-border"> <span>$1</span></li>');
+  html = html.replace(/^\- \[x\](.*$)/gim, '<li class="list-none flex items-center gap-2 my-1 text-black dark:text-white"><input type="checkbox" disabled checked class="accent-violet-500 w-4 h-4 pointer-events-none rounded border-2 border-neon-border"> <span class="line-through text-zinc-450 dark:text-zinc-500">$1</span></li>');
+
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-black border-b-[3px] border-neon-border pb-1 mt-6 mb-3 text-black dark:text-white">$1</h1>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-black border-b-2 border-neon-border pb-1 mt-5 mb-2 text-black dark:text-white">$1</h2>');
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-black mt-4 mb-2 text-black dark:text-white">$1</h3>');
+  html = html.replace(/^&gt; (.*$)/gim, '<blockquote class="border-l-[4px] border-neon-border pl-3 italic my-4 bg-zinc-50 dark:bg-zinc-900/30 py-2 rounded-r text-zinc-750 dark:text-zinc-300">$1</blockquote>');
+  html = html.replace(/^\- (.*$)/gim, '<li class="list-disc list-inside ml-2 my-1 text-black dark:text-white">$1</li>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-violet-500 hover:text-violet-600 underline font-black">$1</a>');
+
+  const lines = html.split('\n');
+  let result = [];
+  let inList = false;
+  
+  for (let line of lines) {
+    if (line.includes('<li')) {
+      if (!inList) {
+        result.push('<ul class="space-y-1 my-3">');
+        inList = true;
+      }
+      result.push(line);
+    } else {
+      if (inList) {
+        result.push('</ul>');
+        inList = false;
+      }
+      
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('<h') && !trimmed.startsWith('<pre') && !trimmed.startsWith('<blockquote') && !trimmed.startsWith('<ul') && !trimmed.startsWith('</ul')) {
+        result.push(`<p class="my-2.5 leading-relaxed text-black dark:text-zinc-200">${line}</p>`);
+      } else {
+        result.push(line);
+      }
+    }
+  }
+  if (inList) result.push('</ul>');
+  
+  return result.join('\n');
+};
+
+const NotesEditor = ({ value, onChange, readOnly = false, editorRef }) => {
   const textareaRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("write");
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
 
-  /** Insert markdown syntax at the cursor position */
-  const insertSyntax = (syntax) => {
+  const drawShapesOnCanvas = (aiShapes) => {
+    if (!editorRef?.current) {
+      setAiError("Tldraw canvas is not loaded yet. Make sure you are in Split or Canvas view mode.");
+      return;
+    }
+    const editor = editorRef.current;
+    const currentShapes = editor.getCurrentPageShapes();
+    if (currentShapes.length > 0) {
+      editor.deleteShapes(currentShapes.map((s) => s.id));
+    }
+    editor.createShapes(aiShapes);
+    setTimeout(() => {
+      editor.zoomToFit();
+    }, 100);
+  };
+
+  const handleGenerateDiagram = async () => {
+    if (!aiPrompt.trim()) {
+      setAiError("Please describe the diagram you want to generate.");
+      return;
+    }
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const res = await api.post("/ai/generate-diagram", { prompt: aiPrompt });
+      const shapes = res.data?.data;
+      if (shapes && Array.isArray(shapes)) {
+        drawShapesOnCanvas(shapes);
+        setShowAiModal(false);
+        setAiPrompt("");
+      } else {
+        setAiError("Failed to parse shapes generated by AI.");
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || "Failed to generate diagram using AI.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGenerateERDiagram = async () => {
+    if (!value.trim()) {
+      setAiError("Please write schema code in the editor before generating an ER-Diagram.");
+      return;
+    }
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const res = await api.post("/ai/generate-diagram", {
+        prompt: "Generate an ER diagram representing this schema",
+        schemaContext: value
+      });
+      const shapes = res.data?.data;
+      if (shapes && Array.isArray(shapes)) {
+        drawShapesOnCanvas(shapes);
+        setShowAiModal(false);
+      } else {
+        setAiError("Failed to parse ER-diagram shapes generated by AI.");
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || "Failed to generate ER-diagram using AI.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGenerateSchemaFromCanvas = async () => {
+    if (!editorRef?.current) {
+      setAiError("Tldraw canvas is not loaded yet. Make sure you are in Split or Canvas view mode.");
+      return;
+    }
+    const editor = editorRef.current;
+    const currentShapes = editor.getCurrentPageShapes();
+    if (!currentShapes || currentShapes.length === 0) {
+      setAiError("No diagram shapes found on the canvas to generate schema from.");
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const res = await api.post("/ai/generate-schema", { shapes: currentShapes });
+      const schemaCode = res.data?.data;
+      if (schemaCode) {
+        onChange(schemaCode);
+        setActiveTab("write");
+        setShowAiModal(false);
+      } else {
+        setAiError("Failed to generate schema code.");
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || "Failed to generate schema code using AI.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const insertSyntax = (type) => {
     if (readOnly || !textareaRef.current) return;
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const before = textarea.value.substring(0, start);
-    const after = textarea.value.substring(end);
-    const newValue = before + syntax + after;
-    onChange(newValue);
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    let replacement = "";
+    let newCursorStart = start;
+    let newCursorEnd = end;
+
+    switch (type) {
+      case "H1":
+        replacement = `# ${selected || "Heading 1"}`;
+        newCursorStart = start + 2;
+        newCursorEnd = newCursorStart + (selected || "Heading 1").length;
+        break;
+      case "H2":
+        replacement = `## ${selected || "Heading 2"}`;
+        newCursorStart = start + 3;
+        newCursorEnd = newCursorStart + (selected || "Heading 2").length;
+        break;
+      case "B":
+        replacement = `**${selected || "bold text"}**`;
+        newCursorStart = start + 2;
+        newCursorEnd = newCursorStart + (selected || "bold text").length;
+        break;
+      case "I":
+        replacement = `*${selected || "italic text"}*`;
+        newCursorStart = start + 1;
+        newCursorEnd = newCursorStart + (selected || "italic text").length;
+        break;
+      case "List":
+        replacement = `- ${selected || "List item"}`;
+        newCursorStart = start + 2;
+        newCursorEnd = newCursorStart + (selected || "List item").length;
+        break;
+      case "Todo":
+        replacement = `- [ ] ${selected || "Todo item"}`;
+        newCursorStart = start + 6;
+        newCursorEnd = newCursorStart + (selected || "Todo item").length;
+        break;
+      case "Code":
+        replacement = `\`\`\`javascript\n${selected || "code here"}\n\`\`\``;
+        newCursorStart = start + 14;
+        newCursorEnd = newCursorStart + (selected || "code here").length;
+        break;
+      case "Link":
+        replacement = `[${selected || "Link Text"}](https://example.com)`;
+        newCursorStart = start + 1;
+        newCursorEnd = newCursorStart + (selected || "Link Text").length;
+        break;
+      default:
+        break;
+    }
+
+    onChange(before + replacement + after);
+
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(start + syntax.length, start + syntax.length);
+      textarea.setSelectionRange(newCursorStart, newCursorEnd);
     }, 50);
   };
 
   const helpers = [
-    { label: "H1", syntax: "# " },
-    { label: "H2", syntax: "## " },
-    { label: "B", syntax: "**Text**" },
-    { label: "Code", syntax: "```javascript\n\n```" },
-    { label: "List", syntax: "- " },
+    { label: "H1", type: "H1", color: "bg-violet-300 hover:bg-violet-400" },
+    { label: "H2", type: "H2", color: "bg-cyan-300 hover:bg-cyan-400" },
+    { label: "B", type: "B", color: "bg-pink-300 hover:bg-pink-400" },
+    { label: "I", type: "I", color: "bg-purple-300 hover:bg-purple-400" },
+    { label: "List", type: "List", color: "bg-orange-300 hover:bg-orange-400" },
+    { label: "Todo", type: "Todo", color: "bg-yellow-300 hover:bg-yellow-400" },
+    { label: "Code", type: "Code", color: "bg-emerald-300 hover:bg-emerald-400" },
+    { label: "Link", type: "Link", color: "bg-rose-300 hover:bg-rose-400" },
   ];
 
+  const charCount = value ? value.length : 0;
+  const wordCount = value ? value.trim().split(/\s+/).filter(Boolean).length : 0;
+
   return (
-    <div className="h-full flex flex-col bg-card-bg border-r-[3px] border-neon-border">
-      {/* Toolbar */}
+    <div className="h-full flex flex-col bg-card-bg border-r-[3px] border-neon-border overflow-hidden rounded relative">
       <div className="p-3 border-b-[3px] border-neon-border flex flex-wrap justify-between items-center bg-zinc-50 dark:bg-hover-bg gap-2 shrink-0">
-        <span className="text-[10px] font-black uppercase text-black dark:text-zinc-300 bg-white dark:bg-zinc-800 px-2 py-0.5 border-2 border-neon-border border-opacity-20 shadow-[1px_1px_0px_0px_var(--shadow-white)]">
-          Notes Spec
-        </span>
-        <div className="flex gap-1.5 items-center">
+        <div className="flex gap-2 items-center">
+          <div className="flex border-[2px] border-neon-border overflow-hidden bg-white dark:bg-zinc-800 shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] rounded">
+            <button
+              type="button"
+              onClick={() => setActiveTab("write")}
+              className={`px-3 py-1 text-[10px] font-black uppercase transition-all cursor-pointer ${
+                activeTab === "write"
+                  ? "bg-yellow-300 text-black border-r-[2px] border-neon-border"
+                  : "bg-transparent text-black dark:text-zinc-300 border-r-[2px] border-neon-border hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              }`}
+            >
+              Write
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("preview")}
+              className={`px-3 py-1 text-[10px] font-black uppercase transition-all cursor-pointer ${
+                activeTab === "preview"
+                  ? "bg-yellow-300 text-black"
+                  : "bg-transparent text-black dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              }`}
+            >
+              Preview
+            </button>
+          </div>
+
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => setShowAiModal(true)}
+              className="px-3 py-1 bg-yellow-300 text-black border-[2px] border-neon-border text-[10px] font-black uppercase shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer rounded flex items-center gap-1"
+            >
+              ✨ Ask AI
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-1.5 items-center flex-wrap">
           {readOnly ? (
             <span className="text-[9px] font-black bg-red-300 border-[2px] border-neon-border text-black px-2.5 py-1 shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] uppercase select-none rotate-[-2deg]">
               Read Only
             </span>
           ) : (
-            helpers.map((h) => {
-              const buttonColors = {
-                H1: "bg-violet-300 hover:bg-violet-400",
-                H2: "bg-cyan-300 hover:bg-cyan-400",
-                B: "bg-pink-300 hover:bg-pink-400",
-                Code: "bg-emerald-300 hover:bg-emerald-400",
-                List: "bg-orange-300 hover:bg-orange-400"
-              };
-              const colorClass = buttonColors[h.label] || "bg-white hover:bg-zinc-100";
-              return (
-                <button
-                  key={h.label}
-                  type="button"
-                  onClick={() => insertSyntax(h.syntax)}
-                  className={`px-2.5 py-1 border-[2px] border-neon-border text-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer ${colorClass}`}
-                >
-                  {h.label}
-                </button>
-              );
-            })
+            activeTab === "write" &&
+            helpers.map((h) => (
+              <button
+                key={h.label}
+                type="button"
+                onClick={() => insertSyntax(h.type)}
+                className={`px-2 py-0.5 border-[2px] border-neon-border text-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer rounded ${h.color}`}
+              >
+                {h.label}
+              </button>
+            ))
           )}
         </div>
       </div>
 
-      {/* Textarea */}
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        readOnly={readOnly}
-        placeholder={readOnly ? "No notes in this document." : "Type notes or engineering specs here… (Supports Markdown)"}
-        className="flex-1 w-full p-6 bg-transparent text-sm font-semibold outline-none resize-none leading-relaxed text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-500 custom-scrollbar overflow-y-auto"
-        spellCheck={false}
-      />
+      <div className="flex-1 w-full relative overflow-hidden bg-transparent">
+        {activeTab === "write" ? (
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            readOnly={readOnly}
+            placeholder={readOnly ? "No notes in this document." : "Type notes or engineering specs here… (Supports Markdown)"}
+            className="w-full h-full p-6 bg-transparent text-sm font-semibold outline-none resize-none leading-relaxed text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-zinc-500 custom-scrollbar overflow-y-auto"
+            spellCheck={false}
+          />
+        ) : (
+          <div
+            className="w-full h-full p-6 text-sm font-medium leading-relaxed custom-scrollbar overflow-y-auto text-black dark:text-zinc-200 select-text"
+            dangerouslySetInnerHTML={{ __html: parseMarkdown(value) }}
+          />
+        )}
+      </div>
+
+      <div className="px-6 py-2 border-t-[3px] border-neon-border bg-zinc-50 dark:bg-hover-bg flex justify-between items-center text-[10px] font-black uppercase text-black/50 dark:text-zinc-400 shrink-0 select-none">
+        <span>Markdown Supported</span>
+        <div className="flex gap-3">
+          <span>{wordCount} Words</span>
+          <span>{charCount} Characters</span>
+        </div>
+      </div>
+
+      {showAiModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-md bg-yellow-50 dark:bg-zinc-950 border-[3px] border-neon-border p-6 shadow-[6px_6px_0px_0px_#000] rounded">
+            <div className="flex justify-between items-center border-b-2 border-neon-border pb-3 mb-4">
+              <span className="text-xs font-black uppercase text-black dark:text-white flex items-center gap-1.5">
+                ✨ SyncBoard AI Assistant
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAiModal(false);
+                  setAiError("");
+                }}
+                className="w-6 h-6 border-2 border-neon-border bg-rose-300 hover:bg-rose-400 text-black font-black text-xs flex items-center justify-center shadow-[1px_1px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer rounded"
+              >
+                ✕
+              </button>
+            </div>
+
+            {aiError && (
+              <div className="mb-4 p-2 bg-red-200 border-2 border-neon-border text-black text-xs font-bold rounded">
+                ⚠️ {aiError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase text-black/60 dark:text-zinc-400 mb-1.5">
+                  1. Generate Diagram on Canvas
+                </label>
+                <textarea
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Describe a microservices system, flowchart, flow, or ask to generate an ER-Diagram based on your notes..."
+                  className="w-full p-3 bg-white dark:bg-zinc-800 border-2 border-neon-border outline-none text-xs font-semibold text-black dark:text-white placeholder:text-zinc-400 resize-none h-20 rounded"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    disabled={aiLoading}
+                    onClick={handleGenerateDiagram}
+                    className="flex-1 py-1.5 bg-violet-300 hover:bg-violet-400 text-black border-2 border-neon-border text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded"
+                  >
+                    {aiLoading ? "Generating..." : "🎨 Make Diagram"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={aiLoading}
+                    onClick={handleGenerateERDiagram}
+                    className="flex-1 py-1.5 bg-cyan-300 hover:bg-cyan-400 text-black border-2 border-neon-border text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded"
+                  >
+                    {aiLoading ? "Generating..." : "⚡ Notes ➜ ER-Diag"}
+                  </button>
+                </div>
+              </div>
+
+              <hr className="border-t-2 border-neon-border opacity-20 my-2" />
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-black/60 dark:text-zinc-400 mb-1.5">
+                  2. Generate Code from Canvas
+                </label>
+                <p className="text-[9px] text-zinc-650 dark:text-zinc-400 font-bold mb-2">
+                  Generate fully-fledged Mongoose Schema code from the shapes/models currently drawn on your canvas.
+                </p>
+                <button
+                  type="button"
+                  disabled={aiLoading}
+                  onClick={handleGenerateSchemaFromCanvas}
+                  className="w-full py-1.5 bg-emerald-300 hover:bg-emerald-400 text-black border-2 border-neon-border text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded"
+                >
+                  {aiLoading ? "Generating Code..." : "✍️ ER-Diag ➜ Schema Code"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
