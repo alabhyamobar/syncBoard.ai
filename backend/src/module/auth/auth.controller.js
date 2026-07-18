@@ -13,6 +13,21 @@ import {
 import jwt from "jsonwebtoken";
 import { generateAccessToken, generateRefreshToken } from "../../utils/auth.js";
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const clearCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+};
+
 export const register = async (req, res) => {
   const { user, accessToken, refreshToken } = await registerService(
     req.body,
@@ -20,12 +35,7 @@ export const register = async (req, res) => {
     res,
   );
 
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
   res.status(201).json({ user, accessToken });
 };
@@ -37,12 +47,7 @@ export const login = async (req, res) => {
     res,
   );
 
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
   res.json({ user, accessToken });
 };
@@ -76,7 +81,7 @@ export const logout = async (req, res) => {
 
   await revokeSession(refreshToken);
 
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken", clearCookieOptions);
 
   res.json({
     message: "Logged out successfully",
@@ -96,7 +101,7 @@ export const logoutAll = async (req, res) => {
 
   await revokeAllSessions(decoded.id);
 
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken", clearCookieOptions);
 
   res.json({
     message: "Logged out from all devices",
@@ -116,14 +121,7 @@ export const googleCallback = async (req, res) => {
 
   const accessToken = generateAccessToken(user, session._id);
 
-  const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
-
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
   const frontendUrl = (process.env.FRONTEND_URL || "").trim() || (
     isProduction
