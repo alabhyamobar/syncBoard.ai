@@ -24,8 +24,8 @@ const LoginForms = ({ switchToSignup }) => {
 
     try {
       const res = await api.post("/auth/login", data);
-      const { accessToken, user } = res.data;
-      login({ accessToken, user });
+      const { accessToken, refreshToken, user } = res.data;
+      login({ accessToken, refreshToken, user });
       const redirectPath = localStorage.getItem("redirect_after_login");
       if (redirectPath) {
         localStorage.removeItem("redirect_after_login");

@@ -5,3 +5,15 @@ export const setToken = (token) => {
 };
 
 export const getToken = () => accessToken;
+
+export const setRefreshToken = (token) => {
+  if (token) {
+    localStorage.setItem("refreshToken", token);
+  } else {
+    localStorage.removeItem("refreshToken");
+  }
+};
+
+export const getRefreshToken = () => {
+  return localStorage.getItem("refreshToken");
+};

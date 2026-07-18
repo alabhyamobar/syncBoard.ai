@@ -5,7 +5,7 @@ import React, {
   useEffect,
 } from "react";
 import api from "../api";
-import { setToken } from "../util";
+import { setToken, setRefreshToken, getRefreshToken } from "../util";
 import { Navigate, useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
@@ -15,10 +15,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // 🔥 important
   const navigate = useNavigate();
-  const login = ({ accessToken, user }) => {
+
+  const login = ({ accessToken, refreshToken, user }) => {
     setAccessToken(accessToken);
     setUser(user);
     setToken(accessToken);
+    if (refreshToken) {
+      setRefreshToken(refreshToken);
+    }
   };
 
 
@@ -32,6 +36,7 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(null);
     setUser(null);
     setToken(null);
+    setRefreshToken(null);
     navigate("/");
   };
 
@@ -45,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(null);
     setUser(null);
     setToken(null);
+    setRefreshToken(null);
     navigate("/");
   };
 
@@ -52,23 +58,42 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const res = await api.post("/auth/refresh");
+        const params = new URLSearchParams(window.location.search);
+        let token = params.get("token");
+        let rToken = params.get("refreshToken");
 
-        const newAccessToken = res.data.accessToken;
+        if (token && rToken) {
+          setToken(token);
+          setRefreshToken(rToken);
+          setAccessToken(token);
+          // Remove token from query string
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          // Normal refresh flow
+          const localRefreshToken = getRefreshToken();
+          // If no token at all, skip calling /auth/refresh to prevent useless 401 console logs
+          if (!localRefreshToken) {
+            setLoading(false);
+            return;
+          }
 
-        setAccessToken(newAccessToken);
-        setToken(newAccessToken);
+          const res = await api.post("/auth/refresh", { refreshToken: localRefreshToken }, {
+            headers: { "x-refresh-token": localRefreshToken }
+          });
+          token = res.data.accessToken;
+          setAccessToken(token);
+          setToken(token);
+        }
+
         const userRes = await api.get("/user/me");
-        console.log(userRes)
-        console.log("USER RESPONSE:", userRes.data);
         setUser(userRes.data.data);
-        console.log("BEFORE NAVIGATE");
-        console.log("CURRENT USER:", userRes.data.data);
-        console.log("AFTER NAVIGATE");
       } catch (err) {
-        console.log("ERROR:", err);
-        console.log("STATUS:", err.response?.status);
-        console.log("DATA:", err.response?.data);
+        // If it's a 401, it is expected when session is expired or not authenticated
+        if (err.response?.status !== 401) {
+          console.error("Session restoration failed:", err);
+        }
+        setToken(null);
+        setRefreshToken(null);
       } finally {
         setLoading(false);
       }
@@ -91,4 +116,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+};

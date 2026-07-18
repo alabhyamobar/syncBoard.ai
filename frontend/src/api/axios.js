@@ -1,5 +1,5 @@
 import axios from "axios";
-import { setToken, getToken } from "../util";
+import { setToken, getToken, getRefreshToken, setRefreshToken } from "../util";
 
 const DEV_URL = import.meta.env.VITE_DEV_BACKEND_URL || "http://localhost:5000";
 const PROD_URL = import.meta.env.VITE_PROD_BACKEND_URL || "https://syncboard-ai.onrender.com";
@@ -38,10 +38,14 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        const refreshToken = getRefreshToken();
         const res = await axios.post(
           `${BACKEND_URL}/api/auth/refresh`,
-          {},
-          { withCredentials: true }
+          { refreshToken },
+          {
+            headers: { "x-refresh-token": refreshToken },
+            withCredentials: true,
+          }
         );
 
         const newToken = res.data.accessToken;
@@ -54,6 +58,7 @@ api.interceptors.response.use(
 
       } catch (err) {
         setToken(null); 
+        setRefreshToken(null);
         if (window.location.pathname !== "/") {
           window.location.href = "/";
         }

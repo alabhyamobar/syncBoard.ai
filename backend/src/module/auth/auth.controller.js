@@ -37,7 +37,7 @@ export const register = async (req, res) => {
 
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  res.status(201).json({ user, accessToken });
+  res.status(201).json({ user, accessToken, refreshToken });
 };
 
 export const login = async (req, res) => {
@@ -49,17 +49,18 @@ export const login = async (req, res) => {
 
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  res.json({ user, accessToken });
+  res.json({ user, accessToken, refreshToken });
 };
 
 export const refresh = async (req, res) => {
   try {
-    if (!req.cookies || !req.cookies.refreshToken) {
+    const token = req.cookies?.refreshToken || req.body?.refreshToken || req.headers["x-refresh-token"];
+    if (!token) {
       return res.status(401).json({ message: "No refresh token" });
     }
 
     const { accessToken } = await refreshService(
-      req.cookies.refreshToken,
+      token,
       req,
       res,
     );
@@ -71,7 +72,7 @@ export const refresh = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken || req.headers["x-refresh-token"];
 
   if (!refreshToken) {
     return res.status(400).json({
@@ -89,7 +90,7 @@ export const logout = async (req, res) => {
 };
 
 export const logoutAll = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken || req.headers["x-refresh-token"];
 
   if (!refreshToken) {
     return res.status(400).json({
@@ -129,5 +130,5 @@ export const googleCallback = async (req, res) => {
       : (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim()
   );
 
-  res.redirect(`${frontendUrl}/dashboard`);
+  res.redirect(`${frontendUrl}/dashboard?token=${accessToken}&refreshToken=${refreshToken}`);
 };
