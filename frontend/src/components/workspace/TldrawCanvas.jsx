@@ -303,6 +303,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
         onMount={handleMount}
         isReadOnly={readOnly}
         colorScheme={theme}
+        licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY}
       />
     </div>
   );
