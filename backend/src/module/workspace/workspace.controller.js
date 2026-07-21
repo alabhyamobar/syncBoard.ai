@@ -195,7 +195,7 @@ import {
       if (["Access denied", "Insufficient permissions"].includes(error.message)) {
         return res.status(403).json({ message: error.message });
       }
-      if (error.message === "User already invited or member") {
+      if (["User already invited or member", "User already a member of this workspace"].includes(error.message)) {
         return res.status(409).json({ message: error.message });
       }
       return res.status(500).json({ message: error.message });

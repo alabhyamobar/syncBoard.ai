@@ -58,7 +58,19 @@ export const inviteMember = async ({ workspaceId, email, userId = null, invitedB
   const existing = await workspaceMemberModel.findOne(query);
 
   if (existing) {
-    throw new Error("User already invited or member");
+    if (existing.status === "ACTIVE") {
+      throw new Error("User already a member of this workspace");
+    }
+
+    if (existing.status === "PENDING") {
+      // Re-invite pending member (regenerate token and extend expiration)
+      existing.inviteToken = crypto.randomBytes(32).toString("hex");
+      existing.inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      if (userId) existing.userId = userId;
+      existing.role = role;
+      existing.invitedBy = invitedBy;
+      return existing.save();
+    }
   }
 
   const inviteToken = crypto.randomBytes(32).toString("hex");
