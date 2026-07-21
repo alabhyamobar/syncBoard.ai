@@ -35,12 +35,18 @@ if (smtpHost && smtpUser && smtpPass) {
     maxMessages: 100,
     rateDelta: 1000,
     rateLimit: 5, // max 5 messages per second
+    // Add timeouts to prevent hanging sockets in firewalled environments
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,    // 10 seconds
+    socketTimeout: 15000,      // 15 seconds
   });
 
   // Verify connection configuration on startup
   transporter.verify((error, success) => {
     if (error) {
       console.error("[SMTP ERROR] Transporter connection verification failed:", error);
+      console.warn("[EMAIL SERVICE] Disabling SMTP transporter due to verification failure. Falling back to local preview.");
+      transporter = null;
     } else {
       console.log("[SMTP SUCCESS] Connection verified. Server is ready to deliver messages.");
     }

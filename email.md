@@ -78,3 +78,13 @@ This allows developers to preview and test the complete email flow visually in t
 ### 5.4. IPv6 Network Connection Failure (ENETUNREACH)
 * **Issue**: When attempting to deliver emails, Nodemailer resolved `smtp.gmail.com` using the system's default preference. In environments with incomplete or local-only IPv6 networking configurations, this resolved to a Gmail IPv6 address (`2404:6800:...`) and resulted in a connection crash: `connect ENETUNREACH 2404:6800:4013:813::6c:587`.
 * **Resolution**: Added `dns.setDefaultResultOrder("ipv4first");` at the top of [email.js](file:///c:/Users/Rishi/OneDrive/Desktop/syncboard/backend/src/utils/email.js) to force the DNS resolver to prioritize IPv4 addresses over IPv6. This bypassed the unreachable route and verified live email delivery successfully with a `250 2.0.0 OK` response.
+
+### 5.5. SMTP Connection Timeout (ETIMEDOUT) in Cloud Hosting Environments
+* **Issue**: On cloud application platforms like Render, connection requests to `smtp.gmail.com` on port `587` frequently time out (`ETIMEDOUT`) because outbound mail ports are monitored, throttled, or blocked. If the transporter fails verification on startup, any future invitation attempts would hang for up to 2 minutes waiting for connection handshakes before falling back.
+* **Resolution**:
+  1. **Transporter Verification Fail-Fast**: Configured connection timeouts (`connectionTimeout: 10000`, `greetingTimeout: 10000`, `socketTimeout: 15000`) in the Nodemailer transporter.
+  2. **Automatic Fallback**: Modified the startup verification inside [email.js](file:///c:/Users/Rishi/OneDrive/Desktop/syncboard/backend/src/utils/email.js). If `transporter.verify` fails on startup, `transporter` is set to `null`. This prompts the email service to immediately fall back to the local preview mode without lagging or hanging user interaction threads.
+  3. **Recommended Production Config**: For cloud hosting, use port `465` (Implicit TLS) instead of port `587` (STARTTLS) by configuring:
+     * `SMTP_PORT=465`
+     * `SMTP_SECURE=true`
+     This bypasses port 587 filters and guarantees secure connection establishment on startup.
