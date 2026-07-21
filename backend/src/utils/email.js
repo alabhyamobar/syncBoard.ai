@@ -34,6 +34,7 @@ if (smtpHost && smtpUser && smtpPass) {
     host: smtpHost,
     port: smtpPort,
     secure: smtpSecure,
+    family: 4,
     auth: {
       user: smtpUser,
       pass: smtpPass,
