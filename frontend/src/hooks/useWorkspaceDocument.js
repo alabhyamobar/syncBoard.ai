@@ -239,16 +239,21 @@ export const useWorkspaceDocument = (workspaceId) => {
       setInviteError("");
       setInviteSuccess("");
       try {
-        await api.post(`/workspace/${workspaceId}/members/invite`, {
+        const res = await api.post(`/workspace/${workspaceId}/members/invite`, {
           email: inviteEmail,
           role: inviteRole,
         });
-        setInviteSuccess("Invite successfully sent!");
+        if (res.data?.emailSent === false && res.data?.inviteLink) {
+          setInviteSuccess(`Invite created! Email delivery failed. Copy link: ${res.data.inviteLink}`);
+          setTimeout(() => setInviteSuccess(""), 20000);
+        } else {
+          setInviteSuccess("Invite successfully sent!");
+          setTimeout(() => setInviteSuccess(""), 5000);
+        }
         setInviteEmail("");
         setInviteRole("VIEWER");
         const memRes = await api.get(`/workspace/${workspaceId}/members`);
         if (memRes.data?.members) setMembers(memRes.data.members);
-        setTimeout(() => setInviteSuccess(""), 3000);
       } catch (err) {
         setInviteError(
           err.response?.data?.message || "Failed to invite member"

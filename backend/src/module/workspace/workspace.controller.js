@@ -183,14 +183,28 @@ import {
       const clientUrl = req.get("origin") || config.FRONTEND_URL;
       const inviteLink = `${clientUrl}/accept-invite/${membership.inviteToken}`;
       const invitedByName = req.user.username || req.user.email;
-      await sendInviteEmail({
-        to: email.toLowerCase(),
-        workspaceName: workspace.name,
-        invitedByName,
-        inviteLink,
-      });
 
-      return res.status(201).json({ message: "Invitation sent", membership });
+      let emailSent = false;
+      let emailErrorMsg = "";
+      try {
+        await sendInviteEmail({
+          to: email.toLowerCase(),
+          workspaceName: workspace.name,
+          invitedByName,
+          inviteLink,
+        });
+        emailSent = true;
+      } catch (emailErr) {
+        console.error("[INVITE EMAIL ERROR] Failed to send email:", emailErr);
+        emailErrorMsg = emailErr.message || "Email delivery failed";
+      }
+
+      return res.status(201).json({
+        message: emailSent ? "Invitation sent" : `Invitation created (${emailErrorMsg})`,
+        membership,
+        inviteLink: !emailSent ? inviteLink : undefined,
+        emailSent,
+      });
     } catch (error) {
       if (["Access denied", "Insufficient permissions"].includes(error.message)) {
         return res.status(403).json({ message: error.message });
