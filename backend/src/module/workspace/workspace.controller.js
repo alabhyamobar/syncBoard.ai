@@ -180,7 +180,7 @@ import {
       });
 
       // Send neobrutalist styled email invitation
-      const clientUrl = config.FRONTEND_URL;
+      const clientUrl = req.get("origin") || config.FRONTEND_URL;
       const inviteLink = `${clientUrl}/accept-invite/${membership.inviteToken}`;
       const invitedByName = req.user.username || req.user.email;
       await sendInviteEmail({

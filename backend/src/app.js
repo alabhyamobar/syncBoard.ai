@@ -24,7 +24,8 @@ app.use(
   cors({
     origin: [
       config.FRONTEND_DEV_URL,
-      config.FRONTEND_PROD_URL
+      config.FRONTEND_PROD_URL,
+      "https://sync-board-ai.vercel.app"
     ],
     credentials: true, 
   }),

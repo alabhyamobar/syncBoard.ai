@@ -12,7 +12,9 @@ export const initSocket = (server) => {
     cors: {
       origin: [
         config.FRONTEND_DEV_URL, 
-        config.FRONTEND_PROD_URL 
+        config.FRONTEND_PROD_URL,
+        "https://syncboard-ai.vercel.app",
+        "https://sync-board-ai.vercel.app"
       ],
       credentials: true,
     },
