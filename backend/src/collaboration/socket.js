@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { redisClient, subClient, isRedisReady } from "./redis.js";
 import { updateDocumentCanvas } from "../module/document/document.services.js";
+import config from "../config/config.js";
 
 // Fallback in-memory active users dictionary
 const activeRoomsFallback = {}; // Format: { [roomId]: { [socketId]: { userId, username } } }
@@ -10,8 +11,8 @@ export const initSocket = (server) => {
   const io = new Server(server, {
     cors: {
       origin: [
-        process.env.FRONTEND_DEV_URL, 
-        process.env.FRONTEND_PROD_URL 
+        config.FRONTEND_DEV_URL, 
+        config.FRONTEND_PROD_URL 
       ],
       credentials: true,
     },

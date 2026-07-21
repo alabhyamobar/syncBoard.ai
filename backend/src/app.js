@@ -14,6 +14,7 @@ import userRouter from "../src/module/user/user.router.js";
 import workspaceRouter from "./module/workspace/workspace.router.js";
 import documentRouter from "./module/document/document.router.js";
 import aiRouter from "./module/ai/ai.router.js";
+import config from "./config/config.js";
 
 const app = express();
 
@@ -22,8 +23,8 @@ app.use(helmet());
 app.use(
   cors({
     origin: [
-      process.env.FRONTEND_DEV_URL || "http://localhost:5173",
-      process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app"
+      config.FRONTEND_DEV_URL,
+      config.FRONTEND_PROD_URL
     ],
     credentials: true, 
   }),

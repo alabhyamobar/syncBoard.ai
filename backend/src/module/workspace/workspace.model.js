@@ -67,9 +67,22 @@ workspaceSchema.pre(/^find/, function (next) {
   if (typeof next === "function") next();
 });
 
-workspaceSchema.methods.softDelete = function () {
+workspaceSchema.methods.softDelete = async function () {
   this.isDeleted = true;
   this.deletedAt = new Date();
+
+  // Cascade soft delete to all canvases/documents in the workspace
+  await mongoose.model("Document").updateMany(
+    { workspaceId: this._id },
+    { $set: { isDeleted: true, deletedAt: new Date() } }
+  );
+
+  // Cascade status update to all membership relationships (REMOVED status)
+  await mongoose.model("WorkspaceMember").updateMany(
+    { workspaceId: this._id },
+    { $set: { status: "REMOVED", removedAt: new Date() } }
+  );
+
   return this.save();
 };
 

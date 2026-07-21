@@ -12,6 +12,7 @@ import {
 
 import jwt from "jsonwebtoken";
 import { generateAccessToken, generateRefreshToken } from "../../utils/auth.js";
+import config from "../../config/config.js";
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
 
@@ -124,11 +125,7 @@ export const googleCallback = async (req, res) => {
 
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  const frontendUrl = (process.env.FRONTEND_URL || "").trim() || (
-    isProduction
-      ? (process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app").trim()
-      : (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim()
-  );
+  const frontendUrl = config.FRONTEND_URL;
 
   res.redirect(`${frontendUrl}/dashboard?token=${accessToken}&refreshToken=${refreshToken}`);
 };

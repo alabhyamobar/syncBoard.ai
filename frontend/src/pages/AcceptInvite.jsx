@@ -72,7 +72,7 @@ const AcceptInvite = () => {
 
   return (
     <div className="min-h-screen bg-main-bg flex flex-col justify-center items-center p-6 selection:bg-cyan-300 font-sans transition-colors duration-200">
-      <div className="max-w-md w-full bg-card-bg border-[4px] border-neon-border shadow-[8px_8px_0px_0px_var(--shadow-purple)] p-8 text-center space-y-6">
+      <div className="max-w-md w-full bg-card-bg border-[4px] border-neon-border shadow-[6px_6px_0px_0px_var(--shadow-purple)] sm:shadow-[8px_8px_0px_0px_var(--shadow-purple)] p-6 sm:p-8 text-center space-y-6">
         <h1 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white">
           Workspace Invitation
         </h1>

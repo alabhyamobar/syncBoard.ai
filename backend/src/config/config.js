@@ -36,7 +36,18 @@ const config = {
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
     GOOGLE_ID: process.env.GOOGLE_ID,
     GOOGLE_SECRET: process.env.GOOGLE_SECRET,
-    GOOGLE_CALLBACK_URL: callbackUrl
+    GOOGLE_CALLBACK_URL: callbackUrl,
+    FRONTEND_DEV_URL: (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim(),
+    FRONTEND_PROD_URL: (process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app").trim(),
+    FRONTEND_URL: isProduction
+      ? (process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app").trim()
+      : (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim(),
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+    SMTP_SECURE: process.env.SMTP_SECURE === "true",
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    SMTP_FROM: process.env.SMTP_FROM,
 }
 
 export default config;

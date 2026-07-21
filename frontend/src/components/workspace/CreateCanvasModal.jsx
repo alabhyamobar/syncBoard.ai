@@ -22,7 +22,7 @@ const CreateCanvasModal = ({
       />
 
       {/* Dialog */}
-      <div className="relative bg-card-bg border-[4px] border-neon-border p-8 shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md">
+      <div className="relative bg-card-bg border-[4px] border-neon-border p-6 sm:p-8 shadow-[6px_6px_0px_0px_var(--shadow-pink)] sm:shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md">
         <h2 className="text-2xl font-black uppercase mb-1 text-black dark:text-white">
           New Canvas
         </h2>

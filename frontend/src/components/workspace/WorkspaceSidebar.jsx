@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks";
+import api from "../../api";
 
 /**
  * WorkspaceSidebar
@@ -230,9 +231,22 @@ const WorkspaceSidebar = ({
                         </button>
                       </>
                     ) : (
-                      <span className="text-[9px] uppercase font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-200 text-black border-2 border-neon-border">
-                        {member.role}
-                      </span>
+                      <>
+                        <span className="text-[9px] uppercase font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-200 text-black border-2 border-neon-border">
+                          {member.role}
+                        </span>
+                        {/* Admins can remove editors/viewers, and members can remove themselves (leave) */}
+                        {((userWorkspaceRole === "ADMIN" && member.role !== "OWNER" && member.role !== "ADMIN" && member.userId?._id !== user?._id) ||
+                          (member.userId?._id === user?._id && member.role !== "OWNER")) && (
+                          <button
+                            onClick={() => onRemoveMember(member._id, member.userId?._id === user?._id ? "yourself" : member.userId?.username || member.userId?.email)}
+                            className="p-1 border-2 border-neon-border bg-red-400 text-black hover:bg-red-500 font-bold text-[9px] cursor-pointer transition-colors"
+                            title={member.userId?._id === user?._id ? "Leave workspace" : "Remove teammate"}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </>
                     )}
                     {member.status === "PENDING" && (
                       <span className="text-[8px] uppercase font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 border border-orange-400 dark:border-orange-700 rounded animate-pulse shrink-0">
@@ -246,6 +260,75 @@ const WorkspaceSidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Workspace Button for Owner */}
+      {userWorkspaceRole === "OWNER" && (
+        <div className="px-4 pb-4">
+          <button
+            onClick={async () => {
+              if (
+                window.confirm(
+                  `Are you sure you want to delete the workspace "${workspace?.name || "this workspace"}"? This will soft-delete the workspace and redirect you to the dashboard.`
+                )
+              ) {
+                try {
+                  await api.delete(`/workspace/${workspace._id}`);
+                  navigate("/dashboard");
+                } catch (err) {
+                  console.error("Failed to delete workspace:", err);
+                  alert(
+                    err.response?.data?.message || "Failed to delete workspace"
+                  );
+                }
+              }
+            }}
+            className="w-full py-2 bg-red-400 border-[2px] border-neon-border text-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete Workspace
+          </button>
+        </div>
+      )}
+
+      {/* Leave Workspace Button for non-owners */}
+      {userWorkspaceRole && userWorkspaceRole !== "OWNER" && (
+        <div className="px-4 pb-4">
+          <button
+            onClick={async () => {
+              if (
+                window.confirm(
+                  `Are you sure you want to leave the workspace "${workspace?.name || "this workspace"}"? You will lose access to all canvases and notes.`
+                )
+              ) {
+                // Find current user's member ID
+                const myMemberRecord = members.find(
+                  (m) => m.userId?._id === user?._id
+                );
+                if (!myMemberRecord) {
+                  alert("Could not identify your membership record.");
+                  return;
+                }
+                try {
+                  await api.delete(
+                    `/workspace/${workspace._id}/members/${myMemberRecord._id}`
+                  );
+                  navigate("/dashboard");
+                } catch (err) {
+                  console.error("Failed to leave workspace:", err);
+                  alert(
+                    err.response?.data?.message || "Failed to leave workspace"
+                  );
+                }
+              }
+            }}
+            className="w-full py-2 bg-orange-300 border-[2px] border-neon-border text-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
+          >
+            🚪 Leave Workspace
+          </button>
+        </div>
+      )}
 
       {/* Footer / User Card */}
       <div className="p-4 border-t-[4px] border-neon-border bg-zinc-50 dark:bg-panel-bg flex items-center gap-3">

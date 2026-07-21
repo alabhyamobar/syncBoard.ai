@@ -115,8 +115,8 @@ workspaceMemberSchema.methods.acceptInvite = function (userId) {
   this.status = "ACTIVE";
   if (userId) this.userId = userId;
   this.joinedAt = new Date();
-  this.inviteToken = null;
-  this.inviteExpiresAt = null;
+  this.inviteToken = undefined;
+  this.inviteExpiresAt = undefined;
   return this.save();
 };
 

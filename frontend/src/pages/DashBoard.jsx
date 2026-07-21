@@ -203,6 +203,25 @@ const DashBoard = () => {
     }
   };
 
+  const handleDeleteWorkspace = async (workspaceId, workspaceName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the workspace "${workspaceName}"? This will soft-delete the workspace and revoke access for all members.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.delete(`/workspace/${workspaceId}`);
+      fetchWorkspaces();
+    } catch (error) {
+      console.error("Error deleting workspace:", error);
+      alert(
+        error.response?.data?.message || "Failed to delete the workspace."
+      );
+    }
+  };
+
   useEffect(() => {
     const pendingToken = localStorage.getItem("pendingInviteToken");
     if (pendingToken) {
@@ -402,17 +421,17 @@ const DashBoard = () => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* Topbar */}
-        <header className="flex justify-between items-center px-6 lg:px-10 py-5 border-b-[4px] border-neon-border bg-panel-bg sticky top-0 z-20 transition-colors duration-200">
-          <div className="flex items-center gap-4">
+        <header className="flex justify-between items-center px-4 sm:px-6 lg:px-10 py-3 sm:py-5 border-b-[4px] border-neon-border bg-panel-bg sticky top-0 z-20 transition-colors duration-200 select-none">
+          <div className="flex items-center gap-2.5 sm:gap-4">
             <button 
               className="md:hidden p-2 -ml-2 text-black dark:text-white hover:text-purple-600 rounded-lg transition-colors border-2 border-transparent active:border-black"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white">
+            <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-black dark:text-white">
               {activeTab === "workspaces" && "Workspaces"}
               {activeTab === "projects" && "Canvases"}
               {activeTab === "members" && "Teammates"}
@@ -420,19 +439,19 @@ const DashBoard = () => {
             </h1>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2.5 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
+              className="p-2 sm:p-2.5 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] hover:shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
               )}
@@ -445,19 +464,19 @@ const DashBoard = () => {
               <input
                 value={searchQueries[activeTab] || ""}
                 onChange={(e) => setSearchQueries(prev => ({ ...prev, [activeTab]: e.target.value }))}
-                className="w-[200px] lg:w-[280px] bg-card-bg border-[3px] border-neon-border pl-10 pr-4 py-2.5 text-sm text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-zinc-400 font-bold shadow-[2px_2px_0px_0px_var(--shadow-white)] focus:shadow-[4px_4px_0px_0px_var(--shadow-white)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
+                className="w-[180px] lg:w-[260px] bg-card-bg border-[3px] border-neon-border pl-10 pr-4 py-2 text-sm text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-zinc-400 font-bold shadow-[2px_2px_0px_0px_var(--shadow-white)] focus:shadow-[4px_4px_0px_0px_var(--shadow-white)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
                 placeholder={`Search ${activeTab}...`}
               />
             </div>
 
             <button
               onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-cyan-300 border-[3px] border-neon-border font-black uppercase text-black shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:shadow-[6px_6px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-white)] transition-all flex items-center gap-2 cursor-pointer"
+              className="px-3 py-2 sm:px-5 sm:py-2.5 bg-cyan-300 border-[3px] border-neon-border font-black uppercase text-black shadow-[2.5px_2.5px_0px_0px_var(--shadow-white)] hover:shadow-[4px_4px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_var(--shadow-white)] transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span className="text-sm">New</span>
+              <span className="text-sm hidden xs:inline">New</span>
             </button>
           </div>
         </header>
@@ -473,7 +492,7 @@ const DashBoard = () => {
           />
           
           {/* Personalized Welcome Banner */}
-          <div className="border-[4px] border-neon-border bg-cyan-300 dark:bg-cyan-400 p-6 mb-10 shadow-[6px_6px_0px_0px_var(--shadow-pink)] relative overflow-hidden transition-all duration-200 text-black dark:text-black">
+          <div className="border-[4px] border-neon-border bg-cyan-300 dark:bg-cyan-400 p-6 mb-8 shadow-[6px_6px_0px_0px_var(--shadow-pink)] relative overflow-hidden transition-all duration-200 text-black dark:text-black">
             <div 
               className="absolute inset-0 opacity-[0.08] pointer-events-none" 
               style={{ 
@@ -482,10 +501,23 @@ const DashBoard = () => {
               }}
             />
             <div className="absolute right-4 bottom-0 opacity-10 pointer-events-none text-9xl font-black select-none z-0">Sync</div>
-            <h2 className="text-3xl font-black uppercase tracking-tight mb-2 text-black dark:text-black relative z-10">Welcome Back, {user?.username || "Builder"}!</h2>
-            <p className="font-bold text-sm text-black/80 dark:text-black/70 max-w-2xl relative z-10">
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mb-2 text-black dark:text-black relative z-10">Welcome Back, {user?.username || "Builder"}!</h2>
+            <p className="font-bold text-xs sm:text-sm text-black/80 dark:text-black/70 max-w-2xl relative z-10">
               Logged in as <span className="underline">{user?.email}</span>. Here is your collaborative board manager. Create workspaces, configure active boards, and invite teammates to co-create in real-time.
             </p>
+          </div>
+
+          {/* Mobile Search Bar (hidden on larger viewports) */}
+          <div className="relative sm:hidden mb-6">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQueries[activeTab] || ""}
+              onChange={(e) => setSearchQueries(prev => ({ ...prev, [activeTab]: e.target.value }))}
+              className="w-full bg-card-bg border-[3px] border-neon-border pl-10 pr-4 py-2.5 text-xs text-black dark:text-white placeholder:text-black/45 dark:placeholder:text-zinc-500 font-bold shadow-[2px_2px_0px_0px_var(--shadow-white)] focus:shadow-[4px_4px_0px_0px_var(--shadow-white)] focus:-translate-x-0.5 focus:-translate-y-0.5 outline-none transition-all"
+              placeholder={`Search ${activeTab}...`}
+            />
           </div>
 
           {activeTab === "workspaces" && (
@@ -596,9 +628,25 @@ const DashBoard = () => {
                           <span>Just now</span>
                         </div>
 
-                        <span className={`inline-flex px-3 py-1 text-xs font-black uppercase border-[2px] border-neon-border shadow-[2px_2px_0px_0px_var(--shadow-purple)] ${roleColor}`}>
-                          {role}
-                        </span>
+                        <div className="flex justify-between items-center">
+                          <span className={`inline-flex px-3 py-1 text-xs font-black uppercase border-[2px] border-neon-border shadow-[2px_2px_0px_0px_var(--shadow-purple)] ${roleColor}`}>
+                            {role}
+                          </span>
+                          {role === "OWNER" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWorkspace(ws._id, name);
+                              }}
+                              className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold border-2 border-transparent hover:border-red-500 rounded-none cursor-pointer transition-colors"
+                              title="Delete workspace"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -773,7 +821,7 @@ const DashBoard = () => {
             onClick={() => setShowModal(false)}
           />
           <div 
-            className="relative bg-card-bg border-[4px] border-neon-border p-8 shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md"
+            className="relative bg-card-bg border-[4px] border-neon-border p-6 sm:p-8 shadow-[6px_6px_0px_0px_var(--shadow-pink)] sm:shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md"
           >
             <h2 className="text-2xl font-black uppercase mb-1">New Workspace</h2>
             <p className="text-black/60 dark:text-zinc-400 font-bold text-xs uppercase tracking-wide mb-6">Create a collaborative space for your team</p>
@@ -823,7 +871,7 @@ const DashBoard = () => {
             }}
           />
           <div 
-            className="relative bg-card-bg border-[4px] border-neon-border p-8 shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
+            className="relative bg-card-bg border-[4px] border-neon-border p-6 sm:p-8 shadow-[6px_6px_0px_0px_var(--shadow-pink)] sm:shadow-[10px_10px_0px_0px_var(--shadow-pink)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
           >
             <h2 className="text-2xl font-black uppercase mb-1">Invite Member</h2>
             <p className="text-black/60 dark:text-zinc-400 font-bold text-xs uppercase tracking-wide mb-6">

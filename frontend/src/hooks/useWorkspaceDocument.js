@@ -81,7 +81,7 @@ export const useWorkspaceDocument = (workspaceId) => {
         api.get(`/workspace/${workspaceId}/members`),
       ]);
 
-      if (wsRes.data) setWorkspace(wsRes.data);
+      if (wsRes.data?.workspace) setWorkspace(wsRes.data.workspace);
       if (docsRes.data?.data) {
         const docs = docsRes.data.data;
         setDocuments(docs);

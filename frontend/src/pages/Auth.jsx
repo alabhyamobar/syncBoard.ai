@@ -9,10 +9,34 @@ const Auth = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen flex bg-main-bg overflow-hidden relative font-sans text-black dark:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col md:flex-row bg-main-bg overflow-hidden relative font-sans text-black dark:text-white transition-colors duration-200">
       
-      {/* Theme Toggle Button */}
-      <div className="absolute top-6 right-6 z-20">
+      {/* Mobile Sticky Header */}
+      <header className="flex md:hidden w-full items-center justify-between px-6 py-4 border-b-[4px] border-neon-border bg-panel-bg sticky top-0 z-20 transition-colors duration-200 shrink-0 select-none">
+        <div className="bg-cyan-300 border-[3px] border-neon-border px-4 py-1.5 shadow-[2px_2px_0px_0px_#000] rotate-[-1.5deg]">
+          <h1 className="text-black text-sm font-black tracking-tight uppercase">
+            syncboard<span className="text-purple-600">.ai</span>
+          </h1>
+        </div>
+        <button
+          onClick={toggleTheme}
+          className="p-2 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[2px_2px_0px_0px_var(--shadow-white)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
+          aria-label="Toggle Theme"
+        >
+          {theme === "dark" ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          )}
+        </button>
+      </header>
+
+      {/* Desktop Theme Toggle Button */}
+      <div className="hidden md:block absolute top-6 right-6 z-20">
         <button
           onClick={toggleTheme}
           className="p-2.5 bg-card-bg border-[3px] border-neon-border text-black dark:text-white shadow-[3px_3px_0px_0px_var(--shadow-white)] hover:shadow-[5px_5px_0px_0px_var(--shadow-white)] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all flex items-center justify-center cursor-pointer"
@@ -30,8 +54,8 @@ const Auth = () => {
         </button>
       </div>
 
-      {/* Logo block */}
-      <div className="absolute top-6 left-6 z-20 bg-cyan-300 border-[3px] border-neon-border px-5 py-2.5 shadow-[4px_4px_0px_0px_var(--shadow-white)] rotate-[-2deg] transition-all duration-200">
+      {/* Desktop Logo block */}
+      <div className="hidden md:block absolute top-6 left-6 z-20 bg-cyan-300 border-[3px] border-neon-border px-5 py-2.5 shadow-[4px_4px_0px_0px_var(--shadow-white)] rotate-[-2deg] transition-all duration-200">
         <h1 className="text-black text-lg sm:text-xl font-black tracking-tight uppercase">
           syncboard<span className="text-purple-600 dark:text-purple-400">.ai</span>
         </h1>
@@ -82,7 +106,7 @@ const Auth = () => {
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="relative z-10 w-full max-w-md p-8 bg-card-bg border-[4px] border-neon-border shadow-[10px_10px_0px_0px_var(--shadow-pink)] transition-all duration-200"
+          className="relative z-10 w-full max-w-md p-5 sm:p-8 bg-card-bg border-[4px] border-neon-border shadow-[6px_6px_0px_0px_var(--shadow-pink)] sm:shadow-[10px_10px_0px_0px_var(--shadow-pink)] transition-all duration-200"
         >
           {isLogin ? (
             <LoginForms switchToSignup={() => setIsLogin(false)} />

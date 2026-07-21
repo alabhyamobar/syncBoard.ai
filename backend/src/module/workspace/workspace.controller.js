@@ -12,6 +12,7 @@ import {
   import workspaceMemberModel from "./workspaceMember.model.js";
   import userModel from "../user/user.model.js";
   import { sendInviteEmail } from "../../utils/email.js";
+  import config from "../../config/config.js";
   
   // POST /workspaces
   export const createWorkspaceController = async (req, res) => {
@@ -179,7 +180,8 @@ import {
       });
 
       // Send neobrutalist styled email invitation
-      const inviteLink = `http://localhost:5173/accept-invite/${membership.inviteToken}`;
+      const clientUrl = config.FRONTEND_URL;
+      const inviteLink = `${clientUrl}/accept-invite/${membership.inviteToken}`;
       const invitedByName = req.user.username || req.user.email;
       await sendInviteEmail({
         to: email.toLowerCase(),
@@ -309,12 +311,42 @@ import {
       const { workspaceId, memberId } = req.params;
       const userId = req.user._id;
   
-      // Only OWNER can remove members
-      await checkWorkspaceAccess({
-        workspaceId,
-        userId,
-        roles: ["OWNER"],
+      // Find the member record being removed
+      const targetMember = await workspaceMemberModel.findOne({ _id: memberId, workspaceId });
+      if (!targetMember) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      // Fetch requester's own active membership in this workspace
+      const requesterMembership = await workspaceMemberModel.findOne({ 
+        userId, 
+        workspaceId, 
+        status: "ACTIVE" 
       });
+      if (!requesterMembership) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const isOwner = requesterMembership.role === "OWNER";
+      const isAdmin = requesterMembership.role === "ADMIN";
+      const isSelf = targetMember.userId && targetMember.userId.toString() === userId.toString();
+
+      // Authorization matrix:
+      // 1. Owners can remove anyone (blocked from self-remove by service owner validation)
+      // 2. Admins can remove editors and viewers
+      // 3. Any active member can remove themselves (leave the workspace) except owners
+      let allowed = false;
+      if (isOwner) {
+        allowed = true;
+      } else if (isAdmin && targetMember.role !== "OWNER" && targetMember.role !== "ADMIN") {
+        allowed = true;
+      } else if (isSelf && targetMember.role !== "OWNER") {
+        allowed = true;
+      }
+
+      if (!allowed) {
+        return res.status(403).json({ message: "Insufficient permissions to remove this member" });
+      }
   
       await removeMember({ workspaceId, memberId });
       return res.status(200).json({ message: "Member removed" });

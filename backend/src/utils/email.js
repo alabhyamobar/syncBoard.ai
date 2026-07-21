@@ -1,4 +1,8 @@
-import { Resend } from "resend";
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+
+import config from "../config/config.js";
+import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,12 +10,49 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize Resend client only if API key is provided
-const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// SMTP configuration loading
+const smtpHost = config.SMTP_HOST;
+const smtpPort = config.SMTP_PORT;
+const smtpSecure = config.SMTP_SECURE;
+const smtpUser = config.SMTP_USER;
+const smtpPass = config.SMTP_PASS;
+const smtpFrom = config.SMTP_FROM;
+
+let transporter = null;
+
+// Initialize connection-pooled transporter if configuration is present
+if (smtpHost && smtpUser && smtpPass) {
+  transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+    pool: true, // Use a connection pool for production-grade throughput
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 5, // max 5 messages per second
+  });
+
+  // Verify connection configuration on startup
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error("[SMTP ERROR] Transporter connection verification failed:", error);
+    } else {
+      console.log("[SMTP SUCCESS] Connection verified. Server is ready to deliver messages.");
+    }
+  });
+} else {
+  console.warn(
+    "[EMAIL SERVICE] SMTP configuration is incomplete. Missing SMTP_HOST, SMTP_USER, or SMTP_PASS.\n" +
+    "Falling back to writing local HTML previews in temp-email-preview.html."
+  );
+}
 
 export const sendInviteEmail = async ({ to, workspaceName, invitedByName, inviteLink }) => {
-  const fromEmail = process.env.RESEND_FROM || "onboarding@resend.dev";
-
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -110,30 +151,25 @@ export const sendInviteEmail = async ({ to, workspaceName, invitedByName, invite
     </html>
   `;
 
-  if (resendClient) {
+  if (transporter) {
     try {
-      const { data, error } = await resendClient.emails.send({
-        from: `SyncBoard <${fromEmail}>`,
-        to: [to],
+      const info = await transporter.sendMail({
+        from: smtpFrom,
+        to,
         subject: `Join "${workspaceName}" on SyncBoard`,
         html: htmlContent,
       });
 
-      if (error) {
-        console.error("Resend API error:", error);
-        throw error;
-      }
-
-      console.log(`[EMAIL SENT VIA RESEND]: Invite to ${to} for workspace "${workspaceName}"`);
-      return data;
+      console.log(`[EMAIL SENT VIA SMTP]: MessageId: ${info.messageId} to ${to} for workspace "${workspaceName}"`);
+      return info;
     } catch (error) {
-      console.error("Failed to send email via Resend:", error);
+      console.error("Failed to send email via SMTP:", error);
       throw error;
     }
   } else {
     // Fallback for development/sandbox environment
     console.log("\n-----------------------------------------");
-    console.log(`[NO RESEND_API_KEY]: Generating Local HTML Preview`);
+    console.log(`[NO SMTP CONFIG]: Generating Local HTML Preview`);
     console.log(`Invite Recipient: ${to}`);
     console.log(`Workspace: ${workspaceName}`);
     console.log(`Invited By: ${invitedByName}`);
@@ -151,4 +187,3 @@ export const sendInviteEmail = async ({ to, workspaceName, invitedByName, invite
     return { mock: true, previewPath: tempFilePath };
   }
 };
-
