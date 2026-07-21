@@ -14,7 +14,6 @@ const { address } = await dns.lookup("smtp.gmail.com", {
   family: 4,
 });
 
-console.log(address);
 // SMTP configuration loading
 const smtpHost = config.SMTP_HOST;
 const smtpPort = config.SMTP_PORT;
