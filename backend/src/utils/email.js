@@ -22,6 +22,14 @@ let transporter = null;
 
 // Initialize connection-pooled transporter if configuration is present
 if (smtpHost && smtpUser && smtpPass) {
+  console.log({
+    SMTP_HOST: smtpHost,
+    SMTP_PORT: smtpPort,
+    SMTP_SECURE: smtpSecure,
+    SMTP_USER: smtpUser,
+    SMTP_PASS: smtpPass ? "Present" : "Missing",
+    SMTP_FROM: smtpFrom,
+});
   transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
