@@ -10,6 +10,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const { address } = await dns.lookup("smtp.gmail.com", {
+  family: 4,
+});
+
+console.log(address);
 // SMTP configuration loading
 const smtpHost = config.SMTP_HOST;
 const smtpPort = config.SMTP_PORT;
@@ -31,7 +36,7 @@ if (smtpHost && smtpUser && smtpPass) {
     SMTP_FROM: smtpFrom,
 });
   transporter = nodemailer.createTransport({
-    host: smtpHost,
+    host: address,
     port: smtpPort,
     secure: smtpSecure,
     family: 4,
