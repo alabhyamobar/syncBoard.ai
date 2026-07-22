@@ -13,9 +13,10 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
   const socketRef = useRef(null);
   const lastEmitRef = useRef(0);
   
-  // Track cursor positions and presence list
+  // Track remote cursors, active presence, shape locks, and camera zoom/pan version
   const [remoteCursors, setRemoteCursors] = useState({});
   const [presenceList, setPresenceList] = useState([]);
+  const [shapeLocks, setShapeLocks] = useState({});
   const [cameraVersion, setCameraVersion] = useState(0);
 
   const initialSnapshotRef = useRef(snapshot);
@@ -79,7 +80,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
     // Connect to WebSocket server
     const socket = io(BACKEND_URL, {
       withCredentials: true,
-      transports: ["websocket", "polling"]
+      transports: ["websocket", "polling"],
     });
     socketRef.current = socket;
 
@@ -90,12 +91,19 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
       username: user?.username || user?.email?.split("@")[0] || "Collaborator",
     });
 
-    // Handle presence updates
+    // Handle online presence updates
     socket.on("presence-update", (users) => {
       setPresenceList(users);
     });
 
-    // Handle remote mouse cursor moves
+    // Handle active shape locks for overlapping control
+    socket.on("shape-selection-update", ({ locks }) => {
+      if (locks) {
+        setShapeLocks(locks);
+      }
+    });
+
+    // Handle high-frequency remote mouse cursor moves
     socket.on("cursor-update", ({ userId, username, x, y }) => {
       setRemoteCursors((prev) => ({
         ...prev,
@@ -110,9 +118,18 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
         delete next[userId];
         return next;
       });
+      setShapeLocks((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((shapeId) => {
+          if (next[shapeId].userId === userId) {
+            delete next[shapeId];
+          }
+        });
+        return next;
+      });
     });
 
-    // Handle remote shape updates
+    // Handle real-time remote shape deltas (Added, Updated, Removed)
     socket.on("canvas-update", ({ snapshot: remoteChanges }) => {
       const editor = editorRef.current;
       if (!editor || !remoteChanges) return;
@@ -139,7 +156,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
       });
     });
 
-    // Cleanup inactive cursors periodically
+    // Cleanup inactive cursors periodically (5s timeout)
     const cursorCleanupInterval = setInterval(() => {
       const now = Date.now();
       setRemoteCursors((prev) => {
@@ -153,7 +170,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
         });
         return changed ? next : prev;
       });
-    }, 2000);
+    }, 2500);
 
     return () => {
       socket.disconnect();
@@ -170,14 +187,14 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
     const point = editor.inputs.currentPagePoint;
     const now = Date.now();
     
-    // Throttle broadcasts to 50ms intervals
-    if (now - lastEmitRef.current > 50) {
+    // Throttle cursor broadcasts to 25ms intervals for 40 FPS live feed
+    if (now - lastEmitRef.current > 25) {
       socket.emit("cursor-move", { x: point.x, y: point.y });
       lastEmitRef.current = now;
     }
   }, [readOnly]);
 
-  // ── Handle tldraw mount ──────────────────────────────────────────
+  // ── Handle tldraw mount & event subscriptions ───────────────────
   const handleMount = useCallback(
     (editor) => {
       editorRef.current = editor;
@@ -188,7 +205,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
 
       if (readOnly) return () => {};
 
-      // 1. Listen for user-initiated shape adjustments to broadcast
+      // 1. Listen for user-initiated shape adjustments to broadcast delta
       const unsubChanges = editor.store.listen(
         (event) => {
           if (socketRef.current) {
@@ -197,7 +214,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
             });
           }
 
-          // Debounced DB persistence
+          // Debounced DB persistence (3 seconds after idle)
           clearTimeout(saveTimerRef.current);
           saveTimerRef.current = setTimeout(() => {
             if (socketRef.current) {
@@ -208,12 +225,25 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
             if (onSave) {
               onSave(editor.getSnapshot());
             }
-          }, 4000);
+          }, 3000);
         },
         { source: "user", scope: "document" }
       );
 
-      // 2. Listen for viewport camera moves (zoom/pan) to force re-render cursor overlay positions
+      // 2. Listen for shape selection changes for overlapping control & lock indication
+      const unsubSelection = editor.store.listen(
+        () => {
+          if (socketRef.current) {
+            const selectedShapeIds = editor.getSelectedShapeIds();
+            socketRef.current.emit("shape-select", {
+              selectedIds: selectedShapeIds,
+            });
+          }
+        },
+        { scope: "instance" }
+      );
+
+      // 3. Listen for viewport camera moves (zoom/pan) to force re-render overlays
       const unsubCamera = editor.store.listen(
         () => {
           setCameraVersion((v) => v + 1);
@@ -223,6 +253,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
 
       return () => {
         unsubChanges();
+        unsubSelection();
         unsubCamera();
         clearTimeout(saveTimerRef.current);
       };
@@ -230,7 +261,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
     [onSave, onMount, readOnly]
   );
 
-  // Render pointers mapped to viewport screen coordinates
+  // ── Render live pointers mapped to viewport screen coordinates ────
   const renderPointers = () => {
     const editor = editorRef.current;
     if (!editor) return null;
@@ -239,8 +270,8 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
       try {
         const screenPoint = editor.pageToScreen({ x: c.x, y: c.y });
         
-        // Hide if coordinates fallback to negative or exceed outer viewport margins
-        if (screenPoint.x < 0 || screenPoint.y < 0) return null;
+        // Hide if coordinates fallback to negative or exceed outer viewport bounds
+        if (screenPoint.x < -10 || screenPoint.y < -10) return null;
 
         return (
           <div
@@ -255,11 +286,56 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
             }}
             className="transition-all duration-75 ease-out"
           >
-            <svg className="w-5 h-5 text-cyan-500 fill-current drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-cyan-400 fill-current drop-shadow-[1.5px_1.5px_0px_rgba(0,0,0,1)]" viewBox="0 0 24 24">
               <path d="M7 2v18l5-5h6L7 2z" stroke="black" strokeWidth={2.5} />
             </svg>
             <span className="ml-2.5 px-2 py-0.5 bg-cyan-300 text-black text-[10px] font-black border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000] uppercase tracking-wide whitespace-nowrap">
               {c.username}
+            </span>
+          </div>
+        );
+      } catch (err) {
+        return null;
+      }
+    });
+  };
+
+  // ── Render overlapping shape lock indicators ──────────────────────
+  const renderShapeLocks = () => {
+    const editor = editorRef.current;
+    if (!editor || !shapeLocks) return null;
+
+    return Object.entries(shapeLocks).map(([shapeId, lock]) => {
+      // Don't highlight local user's own selection
+      if (lock.userId === user?._id) return null;
+
+      try {
+        const shape = editor.getShape(shapeId);
+        if (!shape) return null;
+
+        const bounds = editor.getShapePageBounds(shapeId);
+        if (!bounds) return null;
+
+        const topLeft = editor.pageToScreen({ x: bounds.x, y: bounds.y });
+        const width = bounds.w * editor.getZoomLevel();
+        const height = bounds.h * editor.getZoomLevel();
+
+        return (
+          <div
+            key={shapeId}
+            style={{
+              position: "absolute",
+              left: topLeft.x - 4,
+              top: topLeft.y - 4,
+              width: width + 8,
+              height: height + 8,
+              pointerEvents: "none",
+              zIndex: 9990,
+            }}
+            className="border-2 border-dashed border-purple-500 bg-purple-500/10 rounded-sm transition-all duration-100 ease-out"
+          >
+            <span className="absolute -top-5 left-0 px-1.5 py-0.5 bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider border border-black shadow-[1px_1px_0px_0px_#000]">
+              Editing: {lock.username}
             </span>
           </div>
         );
@@ -274,11 +350,14 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
       {/* Dynamic Cursor Overlay */}
       {editorRef.current && renderPointers()}
 
-      {/* active room collaborators list bubble */}
+      {/* Dynamic Overlapping Control / Shape Lock Highlights */}
+      {editorRef.current && renderShapeLocks()}
+
+      {/* Active Room Collaborators Live Feed Badge */}
       {presenceList.length > 1 && (
         <div className="absolute top-4 right-4 z-50 flex items-center gap-1 bg-panel-bg/95 border-[3px] border-neon-border p-2.5 shadow-[4px_4px_0px_0px_var(--shadow-purple)]">
           <span className="w-2.5 h-2.5 bg-emerald-400 border-2 border-black rounded-full animate-pulse mr-1"></span>
-          <span className="text-[10px] font-black uppercase text-black dark:text-white tracking-wider mr-2">Online:</span>
+          <span className="text-[10px] font-black uppercase text-black dark:text-white tracking-wider mr-2">Live Feed ({presenceList.length}):</span>
           <div className="flex -space-x-2.5">
             {presenceList.map((p, idx) => {
               const colors = ["bg-purple-300", "bg-cyan-300", "bg-orange-300", "bg-emerald-300", "bg-rose-300"];
@@ -286,7 +365,7 @@ const TldrawCanvas = ({ snapshot, onSave, onMount, docId, readOnly = false }) =>
               return (
                 <div
                   key={idx}
-                  title={`${p.username} is drawing`}
+                  title={`${p.username} is editing live`}
                   className={`w-7 h-7 rounded-none border-2 border-black flex items-center justify-center text-[10px] font-black text-black uppercase shadow-[1px_1px_0px_0px_#000] ${randomColor}`}
                 >
                   {p.username.slice(0, 2)}

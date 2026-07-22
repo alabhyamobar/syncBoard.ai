@@ -4,8 +4,9 @@ import { redisClient, subClient, isRedisReady } from "./redis.js";
 import { updateDocumentCanvas } from "../module/document/document.services.js";
 import config from "../config/config.js";
 
-// Fallback in-memory active users dictionary
+// Active rooms fallback for presence & in-memory state caching
 const activeRoomsFallback = {}; // Format: { [roomId]: { [socketId]: { userId, username } } }
+const shapeLocks = {};          // Format: { [documentId]: { [shapeId]: { userId, username, updatedAt } } }
 
 export const initSocket = (server) => {
   const io = new Server(server, {
@@ -28,7 +29,7 @@ export const initSocket = (server) => {
     console.log("[Socket.io] Operating in local memory fallback adapter mode.");
   }
 
-  // Helper to fetch online list dynamically
+  // Helper to fetch online presence list dynamically
   const getRoomPresenceList = async (roomId) => {
     if (isRedisReady) {
       try {
@@ -70,14 +71,19 @@ export const initSocket = (server) => {
         activeRoomsFallback[roomId][socket.id] = userMeta;
       }
 
-      console.log(`User ${username} joined room ${roomId}`);
+      console.log(`User ${username} (${userId}) joined room ${roomId}`);
 
-      // Broadcast presence update
+      // Broadcast updated presence list
       const usersList = await getRoomPresenceList(roomId);
       io.to(roomId).emit("presence-update", usersList);
+
+      // Send active shape selection locks for overlapping control
+      if (shapeLocks[documentId]) {
+        socket.emit("shape-selection-update", { locks: shapeLocks[documentId] });
+      }
     });
 
-    // Broadcast cursor coordinates
+    // High-frequency, low-latency live cursor position updates
     socket.on("cursor-move", ({ x, y }) => {
       if (socket.documentId && socket.userId) {
         socket.to(`canvas:${socket.documentId}`).emit("cursor-update", {
@@ -89,14 +95,54 @@ export const initSocket = (server) => {
       }
     });
 
-    // Broadcast whiteboard shapes change
+    // Real-time canvas shape deltas (Added / Updated / Removed)
     socket.on("canvas-change", ({ snapshot }) => {
-      if (socket.documentId) {
-        socket.to(`canvas:${socket.documentId}`).emit("canvas-update", { snapshot });
+      if (socket.documentId && snapshot) {
+        const docId = socket.documentId;
+
+        // Broadcast delta snapshot to all other collaborators in the canvas room instantly
+        socket.to(`canvas:${docId}`).emit("canvas-update", {
+          snapshot,
+          userId: socket.userId,
+          username: socket.username,
+        });
       }
     });
 
-    // Debounced canvas save trigger
+    // Overlapping control: broadcast shape selection / locking
+    socket.on("shape-select", ({ selectedIds }) => {
+      if (!socket.documentId || !socket.userId) return;
+      const docId = socket.documentId;
+
+      if (!shapeLocks[docId]) {
+        shapeLocks[docId] = {};
+      }
+
+      // Clear previous locks held by this user
+      Object.keys(shapeLocks[docId]).forEach((shapeId) => {
+        if (shapeLocks[docId][shapeId].userId === socket.userId) {
+          delete shapeLocks[docId][shapeId];
+        }
+      });
+
+      // Set new shape locks for selected IDs
+      if (Array.isArray(selectedIds)) {
+        selectedIds.forEach((id) => {
+          shapeLocks[docId][id] = {
+            userId: socket.userId,
+            username: socket.username,
+            updatedAt: Date.now(),
+          };
+        });
+      }
+
+      // Broadcast active shape selection locks to all room members
+      io.to(`canvas:${docId}`).emit("shape-selection-update", {
+        locks: shapeLocks[docId],
+      });
+    });
+
+    // Debounced canvas save trigger to MongoDB
     socket.on("save-canvas", async ({ snapshot }) => {
       if (socket.documentId && socket.userId) {
         try {
@@ -117,6 +163,17 @@ export const initSocket = (server) => {
       console.log("Client disconnected:", socket.id);
       if (socket.documentId) {
         const roomId = `canvas:${socket.documentId}`;
+        const docId = socket.documentId;
+
+        // Clean up shape locks held by this user
+        if (shapeLocks[docId] && socket.userId) {
+          Object.keys(shapeLocks[docId]).forEach((shapeId) => {
+            if (shapeLocks[docId][shapeId].userId === socket.userId) {
+              delete shapeLocks[docId][shapeId];
+            }
+          });
+          io.to(roomId).emit("shape-selection-update", { locks: shapeLocks[docId] });
+        }
         
         if (isRedisReady) {
           try {
