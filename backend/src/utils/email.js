@@ -1,12 +1,5 @@
-import dns from "dns";
-import net from "net";
-
-if (typeof dns.setDefaultResultOrder === "function") {
-  dns.setDefaultResultOrder("ipv4first");
-}
-
+import { Resend } from "resend";
 import config from "../config/config.js";
-import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,38 +7,25 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// SMTP configuration loading
-const smtpHost = config.SMTP_HOST;
-const smtpPort = config.SMTP_PORT;
-const smtpSecure = config.SMTP_SECURE;
-const smtpUser = config.SMTP_USER;
-const smtpPass = config.SMTP_PASS;
-const smtpFrom = config.SMTP_FROM || smtpUser;
+const resendApiKey = config.RESEND_API_KEY;
+const emailFrom = config.EMAIL_FROM || "SyncBoard <onboarding@resend.dev>";
 
-let transporter = null;
+let resend = null;
 
-// Custom DNS lookup using dns.resolve4 to query IPv4 A records directly,
-// bypassing Linux glibc getaddrinfo IPv6 defaults to prevent ENETUNREACH (:::0) on cloud platforms.
-const ipv4CustomLookup = (hostname, options, callback) => {
-  if (typeof options === "function") {
-    callback = options;
-    options = {};
-  }
-  if (net.isIPv4(hostname)) {
-    return callback(null, hostname, 4);
-  }
-  dns.resolve4(hostname, (err, addresses) => {
-    if (!err && addresses && addresses.length > 0) {
-      return callback(null, addresses[0], 4);
-    }
-    return dns.lookup(hostname, { family: 4 }, callback);
-  });
-};
+if (resendApiKey) {
+  resend = new Resend(resendApiKey);
+  console.log(`[EMAIL SERVICE] Resend production API client initialized (Sender: ${emailFrom})`);
+} else {
+  console.warn(
+    "[EMAIL SERVICE] RESEND_API_KEY is missing in environment variables.\n" +
+    "Falling back to writing local HTML previews in temp-email-preview.html for development."
+  );
+}
 
-// Helper for writing local HTML preview fallback
+// Helper for writing local HTML preview fallback in development/testing
 const writeLocalPreview = (to, workspaceName, invitedByName, htmlContent) => {
   console.log("\n-----------------------------------------");
-  console.log(`[NO SMTP / FALLBACK]: Generating Local HTML Preview`);
+  console.log(`[NO RESEND KEY / DEV FALLBACK]: Generating Local HTML Preview`);
   console.log(`Invite Recipient: ${to}`);
   console.log(`Workspace: ${workspaceName}`);
   console.log(`Invited By: ${invitedByName}`);
@@ -62,54 +42,6 @@ const writeLocalPreview = (to, workspaceName, invitedByName, htmlContent) => {
 
   return { mock: true, previewPath: tempFilePath };
 };
-
-// Initialize connection-pooled transporter if configuration is present
-if (smtpHost && smtpUser && smtpPass) {
-  console.log({
-    SMTP_HOST: smtpHost,
-    SMTP_PORT: smtpPort,
-    SMTP_SECURE: smtpSecure,
-    SMTP_USER: smtpUser,
-    SMTP_PASS: smtpPass ? "Present" : "Missing",
-    SMTP_FROM: smtpFrom,
-  });
-
-  transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpSecure,
-    family: 4,
-    lookup: ipv4CustomLookup,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-    pool: true, // Use a connection pool for production-grade throughput
-    maxConnections: 5,
-    maxMessages: 100,
-    rateDelta: 1000,
-    rateLimit: 5, // max 5 messages per second
-    // Add timeouts to prevent hanging sockets in firewalled environments
-    connectionTimeout: 5000, // 5 seconds
-    greetingTimeout: 5000,   // 5 seconds
-    socketTimeout: 10000,    // 10 seconds
-  });
-
-  // Verify connection configuration on startup
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error("[SMTP ERROR] Transporter connection verification failed on startup:", error);
-      console.warn("[EMAIL SERVICE] Initial SMTP verification failed. Transporter remains active to retry on email dispatch.");
-    } else {
-      console.log("[SMTP SUCCESS] Connection verified. Server is ready to deliver messages.");
-    }
-  });
-} else {
-  console.warn(
-    "[EMAIL SERVICE] SMTP configuration is incomplete. Missing SMTP_HOST, SMTP_USER, or SMTP_PASS.\n" +
-    "Falling back to writing local HTML previews in temp-email-preview.html."
-  );
-}
 
 export const sendInviteEmail = async ({ to, workspaceName, invitedByName, inviteLink }) => {
   const htmlContent = `
@@ -210,24 +142,32 @@ export const sendInviteEmail = async ({ to, workspaceName, invitedByName, invite
     </html>
   `;
 
-  if (transporter) {
+  if (resend) {
     try {
-      const info = await transporter.sendMail({
-        from: smtpFrom,
-        to,
+      const { data, error } = await resend.emails.send({
+        from: emailFrom,
+        to: [to],
         subject: `Join "${workspaceName}" on SyncBoard`,
         html: htmlContent,
       });
 
-      console.log(`[EMAIL SENT VIA SMTP]: MessageId: ${info.messageId} to ${to} for workspace "${workspaceName}"`);
-      return info;
-    } catch (error) {
-      console.error("Failed to send email via SMTP:", error);
+      if (error) {
+        console.error("[RESEND EMAIL ERROR]:", error);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[EMAIL SERVICE] Falling back to local HTML preview for development.");
+          return writeLocalPreview(to, workspaceName, invitedByName, htmlContent);
+        }
+        throw new Error(error.message || "Failed to send email via Resend API");
+      }
+
+      console.log(`[RESEND EMAIL SENT]: Message ID: ${data?.id} to ${to} for workspace "${workspaceName}"`);
+      return data;
+    } catch (err) {
+      console.error("[RESEND SERVICE EXCEPTION]:", err);
       if (process.env.NODE_ENV !== "production") {
-        console.warn("[EMAIL SERVICE] Falling back to local HTML preview for development/testing.");
         return writeLocalPreview(to, workspaceName, invitedByName, htmlContent);
       }
-      throw error;
+      throw err;
     }
   } else {
     return writeLocalPreview(to, workspaceName, invitedByName, htmlContent);
