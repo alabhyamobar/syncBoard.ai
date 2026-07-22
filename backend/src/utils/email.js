@@ -76,9 +76,9 @@ if (smtpHost && smtpUser && smtpPass) {
     rateDelta: 1000,
     rateLimit: 5, // max 5 messages per second
     // Add timeouts to prevent hanging sockets in firewalled environments
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,    // 10 seconds
-    socketTimeout: 15000,      // 15 seconds
+    connectionTimeout: 5000, // 5 seconds
+    greetingTimeout: 5000,   // 5 seconds
+    socketTimeout: 10000,    // 10 seconds
   });
 
   // Verify connection configuration on startup

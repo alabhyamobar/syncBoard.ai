@@ -43,8 +43,10 @@ const config = {
       ? (process.env.FRONTEND_PROD_URL || "https://sync-board-ai.vercel.app").trim()
       : (process.env.FRONTEND_DEV_URL || "http://localhost:5173").trim(),
     SMTP_HOST: process.env.SMTP_HOST,
-    SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
-    SMTP_SECURE: process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === "true" : (parseInt(process.env.SMTP_PORT || "587", 10) === 465),
+    SMTP_PORT: parseInt(process.env.SMTP_PORT || (isProduction ? "465" : "587"), 10),
+    SMTP_SECURE: process.env.SMTP_SECURE !== undefined
+      ? process.env.SMTP_SECURE === "true"
+      : parseInt(process.env.SMTP_PORT || (isProduction ? "465" : "587"), 10) === 465,
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
     SMTP_FROM: process.env.SMTP_FROM || process.env.SMTP_USER,
