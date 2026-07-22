@@ -1,5 +1,8 @@
 import dns from "dns";
-dns.setDefaultResultOrder("ipv4first");
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 import config from "../config/config.js";
 import nodemailer from "nodemailer";
@@ -16,9 +19,35 @@ const smtpPort = config.SMTP_PORT;
 const smtpSecure = config.SMTP_SECURE;
 const smtpUser = config.SMTP_USER;
 const smtpPass = config.SMTP_PASS;
-const smtpFrom = config.SMTP_FROM;
+const smtpFrom = config.SMTP_FROM || smtpUser;
 
 let transporter = null;
+
+// Custom DNS lookup forcing IPv4 (AF_INET) to prevent ENETUNREACH on environments without IPv6 routing
+const ipv4CustomLookup = (hostname, options, callback) => {
+  return dns.lookup(hostname, { ...options, family: 4 }, callback);
+};
+
+// Helper for writing local HTML preview fallback
+const writeLocalPreview = (to, workspaceName, invitedByName, htmlContent) => {
+  console.log("\n-----------------------------------------");
+  console.log(`[NO SMTP / FALLBACK]: Generating Local HTML Preview`);
+  console.log(`Invite Recipient: ${to}`);
+  console.log(`Workspace: ${workspaceName}`);
+  console.log(`Invited By: ${invitedByName}`);
+
+  const tempFilePath = path.join(__dirname, "..", "..", "temp-email-preview.html");
+  try {
+    fs.writeFileSync(tempFilePath, htmlContent, "utf8");
+    console.log(`Email HTML successfully written to: ${tempFilePath}`);
+    console.log(`Open this file in your browser to inspect the neo-brutalist design!`);
+  } catch (writeErr) {
+    console.error("Failed to write email preview file:", writeErr);
+  }
+  console.log("-----------------------------------------\n");
+
+  return { mock: true, previewPath: tempFilePath };
+};
 
 // Initialize connection-pooled transporter if configuration is present
 if (smtpHost && smtpUser && smtpPass) {
@@ -29,12 +58,14 @@ if (smtpHost && smtpUser && smtpPass) {
     SMTP_USER: smtpUser,
     SMTP_PASS: smtpPass ? "Present" : "Missing",
     SMTP_FROM: smtpFrom,
-});
+  });
+
   transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
     secure: smtpSecure,
     family: 4,
+    lookup: ipv4CustomLookup,
     auth: {
       user: smtpUser,
       pass: smtpPass,
@@ -53,9 +84,8 @@ if (smtpHost && smtpUser && smtpPass) {
   // Verify connection configuration on startup
   transporter.verify((error, success) => {
     if (error) {
-      console.error("[SMTP ERROR] Transporter connection verification failed:", error);
-      console.warn("[EMAIL SERVICE] Disabling SMTP transporter due to verification failure. Falling back to local preview.");
-      transporter = null;
+      console.error("[SMTP ERROR] Transporter connection verification failed on startup:", error);
+      console.warn("[EMAIL SERVICE] Initial SMTP verification failed. Transporter remains active to retry on email dispatch.");
     } else {
       console.log("[SMTP SUCCESS] Connection verified. Server is ready to deliver messages.");
     }
@@ -179,26 +209,13 @@ export const sendInviteEmail = async ({ to, workspaceName, invitedByName, invite
       return info;
     } catch (error) {
       console.error("Failed to send email via SMTP:", error);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[EMAIL SERVICE] Falling back to local HTML preview for development/testing.");
+        return writeLocalPreview(to, workspaceName, invitedByName, htmlContent);
+      }
       throw error;
     }
   } else {
-    // Fallback for development/sandbox environment
-    console.log("\n-----------------------------------------");
-    console.log(`[NO SMTP CONFIG]: Generating Local HTML Preview`);
-    console.log(`Invite Recipient: ${to}`);
-    console.log(`Workspace: ${workspaceName}`);
-    console.log(`Invited By: ${invitedByName}`);
-
-    const tempFilePath = path.join(__dirname, "..", "..", "temp-email-preview.html");
-    try {
-      fs.writeFileSync(tempFilePath, htmlContent, "utf8");
-      console.log(`Email HTML successfully written to: ${tempFilePath}`);
-      console.log(`Open this file in your browser to inspect the neo-brutalist design!`);
-    } catch (writeErr) {
-      console.error("Failed to write email preview file:", writeErr);
-    }
-    console.log("-----------------------------------------\n");
-
-    return { mock: true, previewPath: tempFilePath };
+    return writeLocalPreview(to, workspaceName, invitedByName, htmlContent);
   }
 };
