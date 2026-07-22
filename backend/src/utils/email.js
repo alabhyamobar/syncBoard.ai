@@ -1,4 +1,5 @@
 import dns from "dns";
+import net from "net";
 
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
@@ -23,9 +24,22 @@ const smtpFrom = config.SMTP_FROM || smtpUser;
 
 let transporter = null;
 
-// Custom DNS lookup forcing IPv4 (AF_INET) to prevent ENETUNREACH on environments without IPv6 routing
+// Custom DNS lookup using dns.resolve4 to query IPv4 A records directly,
+// bypassing Linux glibc getaddrinfo IPv6 defaults to prevent ENETUNREACH (:::0) on cloud platforms.
 const ipv4CustomLookup = (hostname, options, callback) => {
-  return dns.lookup(hostname, { ...options, family: 4 }, callback);
+  if (typeof options === "function") {
+    callback = options;
+    options = {};
+  }
+  if (net.isIPv4(hostname)) {
+    return callback(null, hostname, 4);
+  }
+  dns.resolve4(hostname, (err, addresses) => {
+    if (!err && addresses && addresses.length > 0) {
+      return callback(null, addresses[0], 4);
+    }
+    return dns.lookup(hostname, { family: 4 }, callback);
+  });
 };
 
 // Helper for writing local HTML preview fallback

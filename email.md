@@ -60,18 +60,29 @@ This allows developers to preview and test the complete email flow visually in t
 ### 5.1. IPv6 Socket Connection Failure (`ENETUNREACH 2404:6800:... - Local (:::0)`)
 * **Symptom**: 
   ```text
-  [SMTP ERROR] Transporter connection verification failed: Error: connect ENETUNREACH 2404:6800:4003:c02::6d:587 - Local (:::0)
-  [EMAIL SERVICE] Disabling SMTP transporter due to verification failure. Falling back to local preview.
+  [SMTP ERROR] Transporter connection verification failed: Error: connect ENETUNREACH 2404:6800:4003:c00::6d:465 - Local (:::0)
   ```
-* **Root Cause**: Node's default DNS lookup (`dns.lookup`) returned IPv6 `AAAA` records (e.g. `2404:6800:...`). In containerized or cloud host environments without active IPv6 outbound routing, Node attempted to bind an IPv6 socket (`Local (:::0)`), failing with `ENETUNREACH` (network unreachable). Additionally, global `dns.setDefaultResultOrder("ipv4first")` alone was insufficient for Nodemailer socket pools.
+* **Root Cause**: On Linux cloud servers (e.g. Render containers running Linux glibc), Node's standard `dns.lookup()` delegates to system `getaddrinfo()`. Even when `family: 4` is requested, if Linux glibc detects an active local IPv6 interface loopback (`:::0` / `:::1`), `getaddrinfo()` can still return IPv6 `AAAA` records (`2404:6800:...`), leading to `ENETUNREACH` (network unreachable).
 * **Resolution**:
-  1. Implemented a custom DNS lookup wrapper forcing IPv4 (`family: 4`):
+  1. Implemented `dns.resolve4()` inside `ipv4CustomLookup` to perform direct DNS network queries via c-ares, bypassing Linux glibc `getaddrinfo()` completely:
      ```javascript
      const ipv4CustomLookup = (hostname, options, callback) => {
-       return dns.lookup(hostname, { ...options, family: 4 }, callback);
+       if (typeof options === "function") {
+         callback = options;
+         options = {};
+       }
+       if (net.isIPv4(hostname)) {
+         return callback(null, hostname, 4);
+       }
+       dns.resolve4(hostname, (err, addresses) => {
+         if (!err && addresses && addresses.length > 0) {
+           return callback(null, addresses[0], 4);
+         }
+         return dns.lookup(hostname, { family: 4 }, callback);
+       });
      };
      ```
-  2. Injected `family: 4` and `lookup: ipv4CustomLookup` into `nodemailer.createTransport()`. This forces the operating system `getaddrinfo` call to query exclusively IPv4 `A` records and bind IPv4 local sockets (`0.0.0.0:0`).
+  2. Passed `lookup: ipv4CustomLookup` into `nodemailer.createTransport()`. This guarantees that Nodemailer receives explicit IPv4 dotted-quad address strings (e.g. `'192.178.158.108'`) and binds IPv4 local sockets (`0.0.0.0:0`) on both local and cloud platforms.
 
 ### 5.2. Permanent Transporter Disabling on Startup Error
 * **Root Cause**: The previous implementation executed `transporter = null;` inside the startup `transporter.verify()` failure callback. If the server experienced any startup network delay or DNS lag, the transporter was permanently disabled for the runtime lifetime of the process, breaking live email delivery.
